@@ -1,4 +1,5 @@
 name: recalculate-activity-points
+run-name: ${{ github.actor }} Recalculating Activity Points
 on: workflow_dispatch
 jobs:
   check-bats-version:
