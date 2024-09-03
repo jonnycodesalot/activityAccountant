@@ -2,7 +2,7 @@ name: recalculate-activity-points
 run-name: ${{ github.actor }} Recalculating Activity Points
 on: workflow_dispatch
 jobs:
-  check-bats-version:
+  recalculate-points:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
