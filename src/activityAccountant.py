@@ -110,6 +110,24 @@ class Accountant:
             for attendeeEmail, attendee in self.userMap.items():
                 if eventName in attendee.attended:
                     attendee.points += event.activityPoints
+    
+    def exportResults(self):
+        firstNames = list()
+        lastNames = list()
+        emails = list()
+        points = list()
+        for attendeeEmail, attendee in self.userMap.items():
+            firstNames.append(attendee.firstName)
+            lastNames.append(attendee.lastName)
+            emails.append(attendeeEmail)
+            points.append(attendee.points)
+        dataFrame = pd.DataFrame({
+            'First Name':firstNames,
+            'Last Name':lastNames,
+            'Email': emails,
+            'ActivityPoints':points})
+        os.makedirs(os.path.dirname(OUTPUT_DIR), exist_ok=True)
+        dataFrame.to_excel(OUTPUT_DIR + SCORE_FILE)
 
 
 if __name__ == "__main__":
@@ -119,3 +137,4 @@ if __name__ == "__main__":
     accountant.printEvents()
     accountant.assignPoints()
     accountant.printAttendees()
+    accountant.exportResults()
