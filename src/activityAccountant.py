@@ -2,12 +2,10 @@ import pandas as pd
 import os
 import math
 
-#SOURCE_ROOT = 
 ATTENDEE_EXPORTS = "./test/registrantExports/"
 EVENT_EXPORTS = "./test/eventExports/"
 OUTPUT_DIR = "/tmp/activityAccountant/"
 SCORE_FILE = "scoring.xlsx"
-EVENT_FILE = "eventsList.xlsx"
 
 class Event:
     def __init__(self,name,date,activityPoints):
