@@ -2,9 +2,9 @@ import pandas as pd
 import os
 import math
 
-ATTENDEE_EXPORTS = "./test/registrantExports/"
-EVENT_EXPORTS = "./test/eventExports/"
-OUTPUT_DIR = "/tmp/activityAccountant/"
+REGISTRANT_SUBDIR = "registrantExports/"
+EVENT_SUBDIR = "eventExports/"
+OUTPUT_SUBDIR = "scoring/"
 SCORE_FILE = "scoring.xlsx"
 
 class Event:
@@ -31,9 +31,12 @@ class Attendee:
         return str
 
 class Accountant:
-    def __init__(self):
+    def __init__(self,inputDir, outputDir):
         self.userMap = dict()
         self.eventMap = dict()
+        self.inputBaseDir = inputDir
+        self.outputBaseDir = outputDir
+    
 
     def combineDuplicateUsers(self):
         # Placeholder. We're keying users on email address, but if we
@@ -72,8 +75,9 @@ class Accountant:
         return sheet
 
     def buildEventList(self):
-        for file in os.listdir(EVENT_EXPORTS):
-            sheet = self.openAndValidateSheet(EVENT_EXPORTS, file)
+        eventDir = self.inputBaseDir + EVENT_SUBDIR
+        for file in os.listdir(eventDir):
+            sheet = self.openAndValidateSheet(eventDir, file)
             if (sheet is None):
                 continue
             for ndx in range(0,sheet.__len__()):
@@ -87,8 +91,9 @@ class Accountant:
                 self.addUniqueEvent(eventName,eventDate,activityPoints)
                 
     def buildAttendeeList(self):
-        for file in os.listdir(ATTENDEE_EXPORTS):
-            sheet = self.openAndValidateSheet(ATTENDEE_EXPORTS, file)
+        registrantDir = self.inputBaseDir + REGISTRANT_SUBDIR
+        for file in os.listdir(registrantDir):
+            sheet = self.openAndValidateSheet(registrantDir, file)
             if (sheet is None):
                 continue
             print(f"Processing Registrant Export {file}...")
@@ -112,6 +117,7 @@ class Accountant:
                     attendee.points += event.activityPoints
     
     def exportResults(self):
+        scoringDir = self.outputBaseDir + OUTPUT_SUBDIR
         firstNames = list()
         lastNames = list()
         emails = list()
@@ -126,15 +132,15 @@ class Accountant:
             'Last Name':lastNames,
             'Email': emails,
             'ActivityPoints':points})
-        os.makedirs(os.path.dirname(OUTPUT_DIR), exist_ok=True)
-        dataFrame.to_excel(OUTPUT_DIR + SCORE_FILE)
+        os.makedirs(os.path.dirname(scoringDir), exist_ok=True)
+        dataFrame.to_excel(scoringDir + SCORE_FILE)
 
 
 if __name__ == "__main__":
-    accountant = Accountant()
+    accountant = Accountant("./test/","/tmp/")
     accountant.buildEventList()
     accountant.buildAttendeeList()
-    accountant.printEvents()
+    #accountant.printEvents()
     accountant.assignPoints()
-    accountant.printAttendees()
+    #accountant.printAttendees()
     accountant.exportResults()
