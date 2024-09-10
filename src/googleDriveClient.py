@@ -10,7 +10,7 @@ from apiclient import http
 import logging
 import io
 
-CREDSFILE = '/tmp/activityAccountant/creds/credentials.json'
+CREDSFILE = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 
 
 # To list folders
