@@ -18,7 +18,7 @@ jobs:
         run: echo "$credential_content" > /tmp/activityAccountant/credentials.json
 
       - name: Download Input Files
-        run: GOOGLE_APPLICATION_CREDENTIALS="/tmp/activityAccountant/credentials.json python3 src/googleDriveClient.py
+        run: GOOGLE_APPLICATION_CREDENTIALS="/tmp/activityAccountant/credentials.json" python3 src/googleDriveClient.py
 
     
       
