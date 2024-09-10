@@ -5,6 +5,18 @@ jobs:
   recalculate-points:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: ./setupEnv.sh
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies, Prepare Directories
+        run: ./setupEnv.sh && mkdir -p /tmp/activityAccountant
+
+      - name: Generate Credentials File
+        with: credential_content: ${{secrets.GOOGLE_DRIVE_SERVICE_CREDENTIALS_JSON}}
+        run: echo "$credential_content" > /tmp/activityAccountant/credentials.json
+
+      - name: Download Input Files
+        run: GOOGLE_APPLICATION_CREDENTIALS="/tmp/activityAccountant/credentials.json python3 src/googleDriveClient.py
+
+    
       
