@@ -5,6 +5,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaFileUpload
 from google.oauth2 import service_account
 from apiclient import http
 import logging
@@ -88,6 +89,7 @@ def main():
 
     
     downloadDirectory(service,getFolderIdByName(service,"ActivityAccounting"),'/tmp')
+    uploadSpreadsheet(service,getFolderIdByName(service,"scoring"),'./test/eventExports/eventsList.xlsx')
   except HttpError as error:
     # TODO(developer) - Handle errors from drive API.
     print(f"An error occurred: {error}")
@@ -111,6 +113,27 @@ def getFolderIdByName(service, name):
       print("There must be exactly one '" + name + "' folders shared with this user. Check sharing and try again.")
       return
     return items[0]['id']
+
+def uploadSpreadsheet(service,parentFolderId,localPath):
+  try:
+    file_metadata = {"name": os.path.split(localPath)[-1], "parents": [parentFolderId]}
+    abspath =  os.path.abspath(localPath)
+    media = MediaFileUpload(
+       abspath, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", resumable=True
+    )
+    # pylint: disable=maybe-no-member
+    file = (
+        service.files()
+        .create(body=file_metadata, media_body=media, fields="id",supportsAllDrives=True)
+        .execute()
+    )
+    print(f'File ID: "{file.get("id")}".')
+    return file.get("id")
+
+  except HttpError as error:
+    print(f"An error occurred: {error}")
+    return None
+
    
 
 if __name__ == "__main__":
