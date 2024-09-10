@@ -12,7 +12,8 @@ jobs:
         run: ./setupEnv.sh && mkdir -p /tmp/activityAccountant
 
       - name: Generate Credentials File
-        with: credential_content: ${{secrets.GOOGLE_DRIVE_SERVICE_CREDENTIALS_JSON}}
+        with: 
+          credential_content ${{secrets.GOOGLE_DRIVE_SERVICE_CREDENTIALS_JSON}}
         run: echo "$credential_content" > /tmp/activityAccountant/credentials.json
 
       - name: Download Input Files
