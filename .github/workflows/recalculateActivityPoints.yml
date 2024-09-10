@@ -1,5 +1,5 @@
 name: recalculate-activity-points
-run-name: ${{ github.actor }} Recalculate Member Activity Points
+run-name: ${{ github.actor }} - Recalculate Member Activity Points
 on: workflow_dispatch
 jobs:
   recalculate-points:
