@@ -14,7 +14,7 @@ CREDSFILE = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 
 
 # To list folders
-def listfolders(service, filid, des):
+def downloadDirectory(service, filid, des):
     
   #     var q = "mimeType = 'application/vnd.google-apps.folder' and '"+folderId+"' in parents";
   # var children = Drive.Files.list({q:q});
@@ -32,7 +32,7 @@ def listfolders(service, filid, des):
             if not os.path.isdir(des+"/"+item['name']):
                 os.mkdir(path=des+"/"+item['name'])
             print(item['name'])
-            listfolders(service, item['id'], des+"/"+item['name'])  # LOOP un-till the files are found
+            downloadDirectory(service, item['id'], des+"/"+item['name'])  # LOOP un-till the files are found
         elif (item['mimeType'] == str('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')):
             downloadSpreadsheet(service, item['id'], item['name'], des)
             print(item['name'])
@@ -87,7 +87,7 @@ def main():
     service = build("drive", "v3", credentials=service_account.Credentials.from_service_account_file(CREDSFILE))
 
     
-    listfolders(service,getFolderIdByName(service,"ActivityAccounting"),'/tmp')
+    downloadDirectory(service,getFolderIdByName(service,"ActivityAccounting"),'/tmp')
   except HttpError as error:
     # TODO(developer) - Handle errors from drive API.
     print(f"An error occurred: {error}")
