@@ -6,11 +6,55 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.oauth2 import service_account
+from apiclient import http
+import logging
+import io
 
 CREDSFILE = '/tmp/activityAccountant/creds/credentials.json'
 
-# If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/drive.metadata.readonly"]
+
+# To list folders
+def listfolders(service, filid, des):
+    
+  #     var q = "mimeType = 'application/vnd.google-apps.folder' and '"+folderId+"' in parents";
+  # var children = Drive.Files.list({q:q});
+    q = "'"+filid+"' in parents"
+    results = service.files().list(
+        pageSize=1000, q=q,
+        fields="nextPageToken, files(id, name, mimeType)",
+              includeItemsFromAllDrives=True,
+              supportsAllDrives=True).execute()
+    logging.debug(results)
+    folder = results.get('files', [])
+    logging.debug(folder)
+    for item in folder:
+        if str(item['mimeType']) == str('application/vnd.google-apps.folder'):
+            if not os.path.isdir(des+"/"+item['name']):
+                os.mkdir(path=des+"/"+item['name'])
+            print(item['name'])
+            listfolders(service, item['id'], des+"/"+item['name'])  # LOOP un-till the files are found
+        elif (item['mimeType'] == str('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')):
+            downloadSpreadsheet(service, item['id'], item['name'], des)
+            print(item['name'])
+        else:
+           print(f"Skipping download of non-spreadsheet file {item['name']}")
+    return folder
+
+
+# To Download Files
+def downloadSpreadsheet(service, dowid, name,dfilespath):
+    request = service.files().get_media(fileId=dowid)
+    fh = io.BytesIO()
+    downloader = http.MediaIoBaseDownload(fh, request)
+    done = False
+    while done is False:
+        status, done = downloader.next_chunk()
+        print("Download %d%%." % int(status.progress() * 100))
+    with io.open(dfilespath + "/" + name, 'wb') as f:
+        fh.seek(0)
+        f.write(fh.read())
+
+# def uploadSpreadsheet(service,)
 
 
 def main():
@@ -43,18 +87,28 @@ def main():
     service = build("drive", "v3", credentials=service_account.Credentials.from_service_account_file(CREDSFILE))
 
     # Call the Drive v3 API
-    results = (
+    activityAccountantFolderId = (
         service.files()
-        .list(pageSize=10, fields="nextPageToken, files(id, name)",includeItemsFromAllDrives=True,supportsAllDrives=True)
+        .list(pageSize=10,
+              q="mimeType = 'application/vnd.google-apps.folder' and name = 'ActivityAccounting'", 
+              fields="nextPageToken, files(id, name)",
+              includeItemsFromAllDrives=True,
+              supportsAllDrives=True)
         .execute()
     )
-    items = results.get("files", [])
+
+    items = activityAccountantFolderId.get("files", [])
+    if (items.__len__() != 1):
+      print("There must be exactly one 'ActivityAccountant' folders shared with this user. Check sharing and try again.")
+      return
+
 
     if not items:
       print("No files found.")
       return
     print("Files:")
     for item in items:
+      listfolders(service,item['id'],'/tmp')
       print(f"{item['name']} ({item['id']})")
   except HttpError as error:
     # TODO(developer) - Handle errors from drive API.
