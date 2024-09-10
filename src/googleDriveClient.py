@@ -86,34 +86,32 @@ def main():
   try:
     service = build("drive", "v3", credentials=service_account.Credentials.from_service_account_file(CREDSFILE))
 
-    # Call the Drive v3 API
-    activityAccountantFolderId = (
+    
+    listfolders(service,getFolderIdByName(service,"ActivityAccounting"),'/tmp')
+  except HttpError as error:
+    # TODO(developer) - Handle errors from drive API.
+    print(f"An error occurred: {error}")
+
+def getFolderIdByName(service, name):
+       # Call the Drive v3 API
+    folderList = (
         service.files()
         .list(pageSize=10,
-              q="mimeType = 'application/vnd.google-apps.folder' and name = 'ActivityAccounting'", 
+              q="mimeType = 'application/vnd.google-apps.folder' and name = '" + name + "'", 
               fields="nextPageToken, files(id, name)",
               includeItemsFromAllDrives=True,
               supportsAllDrives=True)
         .execute()
     )
-
-    items = activityAccountantFolderId.get("files", [])
-    if (items.__len__() != 1):
-      print("There must be exactly one 'ActivityAccountant' folders shared with this user. Check sharing and try again.")
-      return
-
-
+    items = folderList.get("files", [])
     if not items:
-      print("No files found.")
+      print("Shared folder '" + name + "' not found.")
       return
-    print("Files:")
-    for item in items:
-      listfolders(service,item['id'],'/tmp')
-      print(f"{item['name']} ({item['id']})")
-  except HttpError as error:
-    # TODO(developer) - Handle errors from drive API.
-    print(f"An error occurred: {error}")
-
+    if (items.__len__() != 1):
+      print("There must be exactly one '" + name + "' folders shared with this user. Check sharing and try again.")
+      return
+    return items[0]['id']
+   
 
 if __name__ == "__main__":
   main()
