@@ -1,10 +1,10 @@
 import pandas as pd
 import os
 import math
+import googleDriveClient as gd
 
 REGISTRANT_SUBDIR = "registrantExports/"
 EVENT_SUBDIR = "eventExports/"
-OUTPUT_SUBDIR = "scoring/"
 SCORE_FILE = "scoring.xlsx"
 
 # We don't count events whose dates are older than a certain amount
@@ -89,7 +89,7 @@ class Accountant:
         return sheet
 
     def buildEventList(self):
-        eventDir = self.inputBaseDir + EVENT_SUBDIR
+        eventDir = os.path.join(self.inputBaseDir, EVENT_SUBDIR)
         currTime = pd.to_datetime("now")
         for file in os.listdir(eventDir):
             sheet = self.openAndValidateSheet(eventDir, file)
@@ -119,7 +119,7 @@ class Accountant:
                 )
 
     def buildAttendeeList(self):
-        registrantDir = self.inputBaseDir + REGISTRANT_SUBDIR
+        registrantDir = os.path.join(self.inputBaseDir, REGISTRANT_SUBDIR)
         for file in os.listdir(registrantDir):
             sheet = self.openAndValidateSheet(registrantDir, file)
             if sheet is None:
@@ -134,7 +134,7 @@ class Accountant:
                     lastName=sheet["Last Name"].iloc[ndx],
                     email=sheet["Email"].iloc[ndx],
                 )
-                attendee.addEvent(sheet["Event ID"].iloc[0])
+                attendee.addEvent(sheet["Event ID"].iloc[ndx])
                 # diagnostic print
                 # print(f"\t Attended by {attendee.firstName} {attendee.lastName} - {attendee.email}: total is {attendee.points} points")
 
@@ -147,7 +147,6 @@ class Accountant:
                     attendee.points += event.activityPoints
 
     def exportResults(self):
-        scoringDir = self.outputBaseDir + OUTPUT_SUBDIR
         firstNames = list()
         lastNames = list()
         emails = list()
@@ -165,15 +164,28 @@ class Accountant:
                 "ActivityPoints": points,
             }
         )
-        os.makedirs(os.path.dirname(scoringDir), exist_ok=True)
-        dataFrame.to_excel(scoringDir + SCORE_FILE)
+        os.makedirs(self.outputBaseDir, exist_ok=True)
+        dataFrame.to_excel(os.path.join(self.outputBaseDir, SCORE_FILE))
 
 
 if __name__ == "__main__":
-    accountant = Accountant("./test/", "/tmp/")
+    gdService = gd.createService()
+    localInputDir = "/tmp/activityAccountant/input"
+    gd.downloadDirectory(
+        gdService,
+        gd.getFolderIdByName(gdService, "ActivityAccounting"),
+        localInputDir,
+    )
+    localOutputDir = "/tmp/activityAccountant/results"
+    accountant = Accountant(localInputDir, localOutputDir)
     accountant.buildEventList()
     accountant.buildAttendeeList()
     accountant.printEvents()
     accountant.assignPoints()
-    accountant.printAttendees()
+    # accountant.printAttendees()
     accountant.exportResults()
+    gd.uploadSpreadsheet(
+        gdService,
+        gd.getFolderIdByName(gdService, "scoring"),
+        os.path.join(localOutputDir, SCORE_FILE),
+    )

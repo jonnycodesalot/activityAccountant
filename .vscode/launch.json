@@ -9,7 +9,10 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "env": {
+                "GOOGLE_APPLICATION_CREDENTIALS": "/home/sandwich/driveCredentials.json"
+            }
         }
     ]
 }

@@ -14,6 +14,14 @@ import io
 CREDSFILE = os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
 
 
+def createService():
+    return build(
+        "drive",
+        "v3",
+        credentials=service_account.Credentials.from_service_account_file(CREDSFILE),
+    )
+
+
 # To list folders
 def downloadDirectory(service, fileId, des):
 
@@ -37,7 +45,7 @@ def downloadDirectory(service, fileId, des):
     for item in folder:
         if str(item["mimeType"]) == str("application/vnd.google-apps.folder"):
             if not os.path.isdir(des + "/" + item["name"]):
-                os.mkdir(path=des + "/" + item["name"])
+                os.makedirs(des + "/" + item["name"], exist_ok=True)
             print(item["name"])
             downloadDirectory(
                 service, item["id"], des + "/" + item["name"]
@@ -176,5 +184,5 @@ def uploadSpreadsheet(service, parentFolderId, localPath):
         return None
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
