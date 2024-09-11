@@ -12,10 +12,11 @@ MAXIMUM_EVENT_AGE = pd.DateOffset(years=3)
 
 
 class Event:
-    def __init__(self, name, date, activityPoints):
+    def __init__(self, id, name, date, activityPoints):
         self.name = name
         self.date = date
         self.activityPoints = activityPoints
+        self.id = int(id)
 
     def __str__(self):
         return f"{self.name} {self.date} - {self.activityPoints} points\n"
@@ -33,9 +34,13 @@ class Attendee:
         str = (
             f"{self.firstName} {self.lastName} - {self.points} points - {self.email}\n"
         )
-        for event in self.attended:
-            str += f"\t{event}\n"
+        for eventId in self.attended:
+            str += f"\tEvent {eventId}"
         return str
+
+    def addEvent(self, eventId):
+        if int(eventId) not in self.attended:
+            self.attended.append(int(eventId))
 
 
 class Accountant:
@@ -57,11 +62,11 @@ class Accountant:
             self.userMap[email] = Attendee(firstName.strip(), lastName.strip(), email)
         return self.userMap[email]
 
-    def addUniqueEvent(self, name, date, pointCount):
+    def addUniqueEvent(self, id, name, date, pointCount):
         name = name.strip()
-        if not self.eventMap.__contains__(name):
-            self.eventMap[name] = Event(name, date.strip(), int(pointCount))
-        return self.eventMap[name]
+        if not self.eventMap.__contains__(id):
+            self.eventMap[id] = Event(id, name, date.strip(), int(pointCount))
+        return self.eventMap[id]
 
     def printAttendees(self):
         for key in self.userMap:
@@ -69,7 +74,7 @@ class Accountant:
 
     def printEvents(self):
         for key in self.eventMap:
-            print(self.eventMap[key])
+            print(self.eventMap[key].name)
 
     def openAndValidateSheet(self, directory, file):
         if (not file.endswith(".xlsx")) or file.startswith("~"):
@@ -109,7 +114,9 @@ class Accountant:
                     continue
                 eventBeginDate = sheet["event_date"].iloc[ndx]
                 activityPoints = activityPoints
-                self.addUniqueEvent(eventName, eventBeginDate, activityPoints)
+                self.addUniqueEvent(
+                    sheet["id"].iloc[ndx], eventName, eventBeginDate, activityPoints
+                )
 
     def buildAttendeeList(self):
         registrantDir = self.inputBaseDir + REGISTRANT_SUBDIR
@@ -127,15 +134,16 @@ class Accountant:
                     lastName=sheet["Last Name"].iloc[ndx],
                     email=sheet["Email"].iloc[ndx],
                 )
-                attendee.attended.append(str(sheet["Event"].iloc[0]))
+                attendee.addEvent(sheet["Event ID"].iloc[0])
                 # diagnostic print
                 # print(f"\t Attended by {attendee.firstName} {attendee.lastName} - {attendee.email}: total is {attendee.points} points")
 
     def assignPoints(self):
         # iterate over events, and assign points to every user that has that event
-        for eventName, event in self.eventMap.items():
+        for eventId, event in self.eventMap.items():
+            eventId = int(eventId)
             for attendeeEmail, attendee in self.userMap.items():
-                if eventName in attendee.attended:
+                if eventId in attendee.attended:
                     attendee.points += event.activityPoints
 
     def exportResults(self):
@@ -165,7 +173,7 @@ if __name__ == "__main__":
     accountant = Accountant("./test/", "/tmp/")
     accountant.buildEventList()
     accountant.buildAttendeeList()
-    # accountant.printEvents()
+    accountant.printEvents()
     accountant.assignPoints()
-    # accountant.printAttendees()
+    accountant.printAttendees()
     accountant.exportResults()
