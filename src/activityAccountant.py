@@ -2,10 +2,11 @@ import pandas as pd
 import os
 import math
 import googleDriveClient as gd
+import datetime as dt
 
 REGISTRANT_SUBDIR = "registrantExports/"
 EVENT_SUBDIR = "eventExports/"
-SCORE_FILE = "scoring.xlsx"
+SCORE_FILE_SUFFIX = "scoring.xlsx"
 
 # We don't count events whose dates are older than a certain amount
 MAXIMUM_EVENT_AGE = pd.DateOffset(years=3)
@@ -151,6 +152,7 @@ class Accountant:
         lastNames = list()
         emails = list()
         points = list()
+        pd
         for attendeeEmail, attendee in self.userMap.items():
             firstNames.append(attendee.firstName)
             lastNames.append(attendee.lastName)
@@ -165,7 +167,12 @@ class Accountant:
             }
         )
         os.makedirs(self.outputBaseDir, exist_ok=True)
-        dataFrame.to_excel(os.path.join(self.outputBaseDir, SCORE_FILE))
+        resultFilePath = os.path.join(
+            self.outputBaseDir,
+            dt.datetime.now().strftime("%Y-%m-%d-%H:%M:%S_") + SCORE_FILE_SUFFIX,
+        )
+        dataFrame.to_excel(resultFilePath)
+        return resultFilePath
 
 
 if __name__ == "__main__":
@@ -183,9 +190,9 @@ if __name__ == "__main__":
     accountant.printEvents()
     accountant.assignPoints()
     # accountant.printAttendees()
-    accountant.exportResults()
+    resultFilePath = accountant.exportResults()
     gd.uploadSpreadsheet(
         gdService,
         gd.getFolderIdByName(gdService, "scoring"),
-        os.path.join(localOutputDir, SCORE_FILE),
+        resultFilePath,
     )
