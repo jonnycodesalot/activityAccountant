@@ -3,6 +3,7 @@ import os
 import math
 import googleDriveClient as gd
 import datetime as dt
+import xlsxwriter
 
 REGISTRANT_SUBDIR = "registrantExports/"
 EVENT_SUBDIR = "eventExports/"
@@ -24,11 +25,12 @@ class Event:
 
 
 class Attendee:
-    def __init__(self, firstName, lastName, email):
+    def __init__(self, firstName, lastName, email, memberId):
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
         self.points = 0
+        self.id = memberId
         self.attended = list()
 
     def __str__(self):
@@ -57,10 +59,12 @@ class Accountant:
         # here before we assign points from the events list.
         pass
 
-    def getUser(self, firstName, lastName, email):
+    def getUser(self, firstName, lastName, email, memberId):
         email = email.strip()
         if not self.userMap.__contains__(email):
-            self.userMap[email] = Attendee(firstName.strip(), lastName.strip(), email)
+            self.userMap[email] = Attendee(
+                firstName.strip(), lastName.strip(), email, memberId
+            )
         return self.userMap[email]
 
     def addUniqueEvent(self, id, name, date, pointCount):
@@ -134,10 +138,15 @@ class Accountant:
                     firstName=sheet["First Name"].iloc[ndx],
                     lastName=sheet["Last Name"].iloc[ndx],
                     email=sheet["Email"].iloc[ndx],
+                    memberId=sheet["ID"].iloc[ndx],
                 )
+                # Note that we don't filter out what users to include based
+                # on any event information here. If we've ever processed a
+                # record for them, we want to make sure we continue having
+                # a record in the output, even if it's always 0 points.
+                # Otherwise, we risk leaving old scores around for people
+                # who haven't earned in a very long time.
                 attendee.addEvent(sheet["Event ID"].iloc[ndx])
-                # diagnostic print
-                # print(f"\t Attended by {attendee.firstName} {attendee.lastName} - {attendee.email}: total is {attendee.points} points")
 
     def assignPoints(self):
         # iterate over events, and assign points to every user that has that event
@@ -148,6 +157,7 @@ class Accountant:
                     attendee.points += event.activityPoints
 
     def exportResults(self):
+        ids = list()
         firstNames = list()
         lastNames = list()
         emails = list()
@@ -159,12 +169,18 @@ class Accountant:
         )
         rank = 1
         numberWithSameRank = 0
-        lastScoreExamined = sortedUsers[0][1].points
+        lastScoreExamined = None
         for attendee in sortedUsers:
+            if attendee[1].id == 0:
+                # We don't record scores for members with no login.
+                continue
+            if lastScoreExamined is None:
+                lastScoreExamined = attendee[1].points
             firstNames.append(attendee[1].firstName)
             lastNames.append(attendee[1].lastName)
             emails.append(attendee[1].email)
             points.append(attendee[1].points)
+            ids.append(attendee[1].id)
             if attendee[1].points == lastScoreExamined:
                 numberWithSameRank += 1
             else:
@@ -181,6 +197,7 @@ class Accountant:
             sameRankCount.append(numberWithSameRank)
         dataFrame = pd.DataFrame(
             {
+                "ID": ids,
                 "First Name": firstNames,
                 "Last Name": lastNames,
                 "Email": emails,
@@ -194,7 +211,20 @@ class Accountant:
             self.outputBaseDir,
             dt.datetime.now().strftime("%Y-%m-%d-%H:%M:%S_") + SCORE_FILE_SUFFIX,
         )
-        dataFrame.to_excel(resultFilePath)
+        # export to excel, freezing the top row
+        writer = pd.ExcelWriter(resultFilePath)
+        dataFrame.to_excel(
+            writer, sheet_name="scores", index=False, freeze_panes=(1, 0), na_rep="NaN"
+        )
+        # Set column widths to bring us joy
+        for column in dataFrame:
+            column_length = max(
+                dataFrame[column].astype(str).map(len).max(), len(column)
+            )
+            col_idx = dataFrame.columns.get_loc(column)
+            writer.sheets["scores"].set_column(col_idx, col_idx, column_length)
+        writer.close()
+        # Return the path to the file
         return resultFilePath
 
 
