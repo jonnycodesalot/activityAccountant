@@ -7,6 +7,9 @@ EVENT_SUBDIR = "eventExports/"
 OUTPUT_SUBDIR = "scoring/"
 SCORE_FILE = "scoring.xlsx"
 
+# We don't count events whose dates are older than a certain amount
+MAXIMUM_EVENT_AGE = pd.DateOffset(years=3)
+
 
 class Event:
     def __init__(self, name, date, activityPoints):
@@ -82,6 +85,7 @@ class Accountant:
 
     def buildEventList(self):
         eventDir = self.inputBaseDir + EVENT_SUBDIR
+        currTime = pd.to_datetime("now")
         for file in os.listdir(eventDir):
             sheet = self.openAndValidateSheet(eventDir, file)
             if sheet is None:
@@ -91,10 +95,21 @@ class Accountant:
                 if (activityPoints == 0) or math.isnan(activityPoints):
                     # No point looking at events with no point count
                     continue
-                activityPoints = activityPoints
                 eventName = sheet["title"].iloc[ndx]
-                eventDate = sheet["event_date"].iloc[ndx]
-                self.addUniqueEvent(eventName, eventDate, activityPoints)
+                eventEndDate = sheet["event_end_date"].iloc[ndx]
+                if pd.to_datetime(eventEndDate) < (currTime - MAXIMUM_EVENT_AGE):
+                    print(
+                        f"Event {eventName}'s end date is older than the maximum event age. It will not be counted."
+                    )
+                    continue
+                if pd.to_datetime(eventEndDate) > (currTime):
+                    print(
+                        f"Event {eventName} has not yet ended. It will not be counted."
+                    )
+                    continue
+                eventBeginDate = sheet["event_date"].iloc[ndx]
+                activityPoints = activityPoints
+                self.addUniqueEvent(eventName, eventBeginDate, activityPoints)
 
     def buildAttendeeList(self):
         registrantDir = self.inputBaseDir + REGISTRANT_SUBDIR
