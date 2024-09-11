@@ -152,18 +152,41 @@ class Accountant:
         lastNames = list()
         emails = list()
         points = list()
-        pd
-        for attendeeEmail, attendee in self.userMap.items():
-            firstNames.append(attendee.firstName)
-            lastNames.append(attendee.lastName)
-            emails.append(attendeeEmail)
-            points.append(attendee.points)
+        ranks = list()
+        sameRankCount = list()
+        sortedUsers = sorted(
+            self.userMap.items(), key=lambda attendee: attendee[1].points, reverse=True
+        )
+        rank = 1
+        numberWithSameRank = 0
+        lastScoreExamined = sortedUsers[0][1].points
+        for attendee in sortedUsers:
+            firstNames.append(attendee[1].firstName)
+            lastNames.append(attendee[1].lastName)
+            emails.append(attendee[1].email)
+            points.append(attendee[1].points)
+            if attendee[1].points == lastScoreExamined:
+                numberWithSameRank += 1
+            else:
+                # record how many people have the previous rank, for every row
+                for it in range(0, numberWithSameRank):
+                    sameRankCount.append(numberWithSameRank)
+                # Update to the new rank
+                rank += numberWithSameRank
+                # Reset the number of people with the same rank
+                numberWithSameRank = 1
+            lastScoreExamined = attendee[1].points
+            ranks.append(rank)
+        for it in range(sameRankCount.__len__(), firstNames.__len__()):
+            sameRankCount.append(numberWithSameRank)
         dataFrame = pd.DataFrame(
             {
                 "First Name": firstNames,
                 "Last Name": lastNames,
                 "Email": emails,
                 "ActivityPoints": points,
+                "ActivityRank": ranks,
+                "SameRankCount": sameRankCount,
             }
         )
         os.makedirs(self.outputBaseDir, exist_ok=True)
