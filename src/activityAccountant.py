@@ -65,12 +65,15 @@ class Accountant:
             self.userMap[email] = Attendee(
                 firstName.strip(), lastName.strip(), email, memberId
             )
-        return self.userMap[email]
+        toReturn = self.userMap[email]
+        if toReturn.id == 0:
+            toReturn.id = memberId
+        return toReturn
 
     def addUniqueEvent(self, id, name, date, pointCount):
         name = name.strip()
         if not self.eventMap.__contains__(id):
-            self.eventMap[id] = Event(id, name, date.strip(), int(pointCount))
+            self.eventMap[id] = Event(int(id), str(name), date, int(pointCount))
         return self.eventMap[id]
 
     def printAttendees(self):
@@ -135,10 +138,10 @@ class Accountant:
                     # Skip records that are cancelled or pending
                     continue
                 attendee = self.getUser(
-                    firstName=sheet["First Name"].iloc[ndx],
-                    lastName=sheet["Last Name"].iloc[ndx],
-                    email=sheet["Email"].iloc[ndx],
-                    memberId=sheet["ID"].iloc[ndx],
+                    firstName=str(sheet["First Name"].iloc[ndx]),
+                    lastName=str(sheet["Last Name"].iloc[ndx]),
+                    email=str(sheet["Email"].iloc[ndx]),
+                    memberId=int(sheet["ID"].iloc[ndx]),
                 )
                 # Note that we don't filter out what users to include based
                 # on any event information here. If we've ever processed a
