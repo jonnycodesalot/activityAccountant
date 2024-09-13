@@ -60,7 +60,7 @@ class Accountant:
         pass
 
     def getUser(self, firstName, lastName, email):
-        email = email.strip()
+        email = email.strip().lower()
         if not self.userMap.__contains__(email):
             self.userMap[email] = Attendee(firstName.strip(), lastName.strip(), email)
         toReturn = self.userMap[email]
