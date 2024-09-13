@@ -69,12 +69,25 @@ class Accountant:
                 return email
         return None
 
+    def getUserFromId(self, memberId):
+        if memberId == 0:
+            # Can't map based on zero
+            return None
+        for email, user in self.userMap.items():
+            if user.id == memberId:
+                return email
+        return None
+
     def getUser(self, firstName, lastName, email, memberId):
         email = email.strip().lower()
         if not self.userMap.__contains__(email):
-            # Try searching by name (may have changed email)
-            emailInList = self.getUserFromName(firstName, lastName)
+            # try searching by ID
+            emailInList = self.getUserFromId(memberId)
+            if emailInList is None:
+                # Try searching by name (may have changed email)
+                emailInList = self.getUserFromName(firstName, lastName)
             if emailInList is not None:
+                # we found it above
                 email = emailInList
             else:
                 self.userMap[email] = Attendee(
