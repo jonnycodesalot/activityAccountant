@@ -240,13 +240,13 @@ class Accountant:
 if __name__ == "__main__":
     gdService = gd.createService()
     localInputDir = "/tmp/activityAccountant/input"
-    # if os.path.isdir(localInputDir):
-    #     shutil.rmtree(localInputDir)
-    # gd.downloadDirectory(
-    #     gdService,
-    #     gd.getFolderIdByName(gdService, "ActivityAccounting"),
-    #     localInputDir,
-    # )
+    if os.path.isdir(localInputDir):
+        shutil.rmtree(localInputDir)
+    gd.downloadDirectory(
+        gdService,
+        gd.getFolderIdByName(gdService, "ActivityAccounting"),
+        localInputDir,
+    )
     localOutputDir = "/tmp/activityAccountant/results"
     if os.path.isdir(localOutputDir):
         shutil.rmtree(localOutputDir)
