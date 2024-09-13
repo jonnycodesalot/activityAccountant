@@ -10,7 +10,8 @@ REGISTRANT_SUBDIR = "registrantExports/"
 EVENT_SUBDIR = "eventExports/"
 SCORE_FILE_SUFFIX = "scoring.xlsx"
 
-# We don't count events whose dates are older than a certain amount
+# We don't count events whose dates are older than a
+# certain amount (based on the end date)
 MAXIMUM_EVENT_AGE = pd.DateOffset(years=3)
 
 
