@@ -4,6 +4,7 @@ import math
 import googleDriveClient as gd
 import datetime as dt
 import xlsxwriter
+import shutil
 
 REGISTRANT_SUBDIR = "registrantExports/"
 EVENT_SUBDIR = "eventExports/"
@@ -137,11 +138,15 @@ class Accountant:
                 if sheet["Payment Status"].iloc[ndx] != "Paid":
                     # Skip records that are cancelled or pending
                     continue
+                if int(sheet["Event ID"].iloc[ndx]) not in self.eventMap:
+                    # if the event for this registrant record isn't in our
+                    # list, ignore it.
+                    continue
                 attendee = self.getUser(
                     firstName=str(sheet["First Name"].iloc[ndx]),
                     lastName=str(sheet["Last Name"].iloc[ndx]),
                     email=str(sheet["Email"].iloc[ndx]),
-                    memberId=int(sheet["ID"].iloc[ndx]),
+                    memberId=int(sheet["User ID"].iloc[ndx]),
                 )
                 # Note that we don't filter out what users to include based
                 # on any event information here. If we've ever processed a
@@ -160,7 +165,7 @@ class Accountant:
                     attendee.points += event.activityPoints
 
     def exportResults(self):
-        ids = list()
+        userIds = list()
         firstNames = list()
         lastNames = list()
         emails = list()
@@ -183,7 +188,7 @@ class Accountant:
             lastNames.append(attendee[1].lastName)
             emails.append(attendee[1].email)
             points.append(attendee[1].points)
-            ids.append(attendee[1].id)
+            userIds.append(attendee[1].id)
             if attendee[1].points == lastScoreExamined:
                 numberWithSameRank += 1
             else:
@@ -200,7 +205,7 @@ class Accountant:
             sameRankCount.append(numberWithSameRank)
         dataFrame = pd.DataFrame(
             {
-                "ID": ids,
+                "User ID": userIds,
                 "First Name": firstNames,
                 "Last Name": lastNames,
                 "Email": emails,
@@ -234,12 +239,16 @@ class Accountant:
 if __name__ == "__main__":
     gdService = gd.createService()
     localInputDir = "/tmp/activityAccountant/input"
+    if os.path.isdir(localInputDir):
+        shutil.rmtree(localInputDir)
     gd.downloadDirectory(
         gdService,
         gd.getFolderIdByName(gdService, "ActivityAccounting"),
         localInputDir,
     )
     localOutputDir = "/tmp/activityAccountant/results"
+    if os.path.isdir(localOutputDir):
+        shutil.rmtree(localOutputDir)
     accountant = Accountant(localInputDir, localOutputDir)
     accountant.buildEventList()
     accountant.buildAttendeeList()
