@@ -69,7 +69,7 @@ class Accountant:
     def addUniqueEvent(self, id, name, date, pointCount):
         name = name.strip()
         if not self.eventMap.__contains__(id):
-            self.eventMap[id] = Event(int(id), str(name), date, int(pointCount))
+            self.eventMap[id] = Event(int(id), str(name), str(date), int(pointCount))
         return self.eventMap[id]
 
     def printAttendees(self):
@@ -148,7 +148,7 @@ class Accountant:
                 # a record in the output, even if it's always 0 points.
                 # Otherwise, we risk leaving old scores around for people
                 # who haven't earned in a very long time.
-                attendee.addEvent(sheet["Event ID"].iloc[ndx])
+                attendee.addEvent(int(sheet["Event ID"].iloc[ndx]))
 
     def assignPoints(self):
         # iterate over events, and assign points to every user that has that event
@@ -165,6 +165,23 @@ class Accountant:
         points = list()
         ranks = list()
         sameRankCount = list()
+        inputCols = {
+            "First Name": firstNames,
+            "Last Name": lastNames,
+            "Email": emails,
+            "ActivityPoints": points,
+            "ActivityRank": ranks,
+            "SameRankCount": sameRankCount,
+        }
+        sortedEvents = sorted(
+            self.eventMap.items(), key=lambda event: event[1].date, reverse=True
+        )
+        for event in sortedEvents:
+            if event[1].name in inputCols:
+                raise Exception(
+                    f"There appears to multiple events with the title {event.name}. This is not supportd."
+                )
+            inputCols[event[1].name] = list()
         sortedUsers = sorted(
             self.userMap.items(), key=lambda attendee: attendee[1].points, reverse=True
         )
@@ -178,6 +195,11 @@ class Accountant:
             lastNames.append(attendee[1].lastName)
             emails.append(attendee[1].email)
             points.append(attendee[1].points)
+            for eventId, event in self.eventMap.items():
+                if int(eventId) in attendee[1].attended:
+                    inputCols[event.name].append(event.activityPoints)
+                else:
+                    inputCols[event.name].append(" ")
             if attendee[1].points == lastScoreExamined:
                 numberWithSameRank += 1
             else:
@@ -192,16 +214,7 @@ class Accountant:
             ranks.append(rank)
         for it in range(sameRankCount.__len__(), firstNames.__len__()):
             sameRankCount.append(numberWithSameRank)
-        dataFrame = pd.DataFrame(
-            {
-                "First Name": firstNames,
-                "Last Name": lastNames,
-                "Email": emails,
-                "ActivityPoints": points,
-                "ActivityRank": ranks,
-                "SameRankCount": sameRankCount,
-            }
-        )
+        dataFrame = pd.DataFrame(inputCols)
         os.makedirs(self.outputBaseDir, exist_ok=True)
         resultFilePath = os.path.join(
             self.outputBaseDir,
@@ -227,13 +240,13 @@ class Accountant:
 if __name__ == "__main__":
     gdService = gd.createService()
     localInputDir = "/tmp/activityAccountant/input"
-    if os.path.isdir(localInputDir):
-        shutil.rmtree(localInputDir)
-    gd.downloadDirectory(
-        gdService,
-        gd.getFolderIdByName(gdService, "ActivityAccounting"),
-        localInputDir,
-    )
+    # if os.path.isdir(localInputDir):
+    #     shutil.rmtree(localInputDir)
+    # gd.downloadDirectory(
+    #     gdService,
+    #     gd.getFolderIdByName(gdService, "ActivityAccounting"),
+    #     localInputDir,
+    # )
     localOutputDir = "/tmp/activityAccountant/results"
     if os.path.isdir(localOutputDir):
         shutil.rmtree(localOutputDir)
