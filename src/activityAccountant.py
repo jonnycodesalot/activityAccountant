@@ -26,12 +26,11 @@ class Event:
 
 
 class Attendee:
-    def __init__(self, firstName, lastName, email, memberId):
+    def __init__(self, firstName, lastName, email):
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
         self.points = 0
-        self.id = memberId
         self.attended = list()
 
     def __str__(self):
@@ -60,15 +59,11 @@ class Accountant:
         # here before we assign points from the events list.
         pass
 
-    def getUser(self, firstName, lastName, email, memberId):
+    def getUser(self, firstName, lastName, email):
         email = email.strip()
         if not self.userMap.__contains__(email):
-            self.userMap[email] = Attendee(
-                firstName.strip(), lastName.strip(), email, memberId
-            )
+            self.userMap[email] = Attendee(firstName.strip(), lastName.strip(), email)
         toReturn = self.userMap[email]
-        if toReturn.id == 0:
-            toReturn.id = memberId
         return toReturn
 
     def addUniqueEvent(self, id, name, date, pointCount):
@@ -146,7 +141,6 @@ class Accountant:
                     firstName=str(sheet["First Name"].iloc[ndx]),
                     lastName=str(sheet["Last Name"].iloc[ndx]),
                     email=str(sheet["Email"].iloc[ndx]),
-                    memberId=int(sheet["User ID"].iloc[ndx]),
                 )
                 # Note that we don't filter out what users to include based
                 # on any event information here. If we've ever processed a
@@ -165,7 +159,6 @@ class Accountant:
                     attendee.points += event.activityPoints
 
     def exportResults(self):
-        userIds = list()
         firstNames = list()
         lastNames = list()
         emails = list()
@@ -179,16 +172,12 @@ class Accountant:
         numberWithSameRank = 0
         lastScoreExamined = None
         for attendee in sortedUsers:
-            if attendee[1].id == 0:
-                # We don't record scores for members with no login.
-                continue
             if lastScoreExamined is None:
                 lastScoreExamined = attendee[1].points
             firstNames.append(attendee[1].firstName)
             lastNames.append(attendee[1].lastName)
             emails.append(attendee[1].email)
             points.append(attendee[1].points)
-            userIds.append(attendee[1].id)
             if attendee[1].points == lastScoreExamined:
                 numberWithSameRank += 1
             else:
@@ -205,7 +194,6 @@ class Accountant:
             sameRankCount.append(numberWithSameRank)
         dataFrame = pd.DataFrame(
             {
-                "User ID": userIds,
                 "First Name": firstNames,
                 "Last Name": lastNames,
                 "Email": emails,
