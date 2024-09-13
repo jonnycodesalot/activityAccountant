@@ -59,10 +59,26 @@ class Accountant:
         # here before we assign points from the events list.
         pass
 
+    def getUserFromName(self, firstName, lastName):
+        for email, user in self.userMap.items():
+            if (
+                user.firstName.strip().lower() == firstName.strip().lower()
+                and user.lastName.strip().lower() == lastName.strip().lower()
+            ):
+                return email
+        return None
+
     def getUser(self, firstName, lastName, email):
         email = email.strip().lower()
         if not self.userMap.__contains__(email):
-            self.userMap[email] = Attendee(firstName.strip(), lastName.strip(), email)
+            # Try searching by name (may have changed email)
+            emailInList = self.getUserFromName(firstName, lastName)
+            if emailInList is not None:
+                email = emailInList
+            else:
+                self.userMap[email] = Attendee(
+                    firstName.strip(), lastName.strip(), email
+                )
         toReturn = self.userMap[email]
         return toReturn
 
