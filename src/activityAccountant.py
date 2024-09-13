@@ -26,11 +26,12 @@ class Event:
 
 
 class Attendee:
-    def __init__(self, firstName, lastName, email):
+    def __init__(self, firstName, lastName, email, memberId):
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
         self.points = 0
+        self.id = memberId
         self.attended = list()
 
     def __str__(self):
@@ -68,7 +69,7 @@ class Accountant:
                 return email
         return None
 
-    def getUser(self, firstName, lastName, email):
+    def getUser(self, firstName, lastName, email, memberId):
         email = email.strip().lower()
         if not self.userMap.__contains__(email):
             # Try searching by name (may have changed email)
@@ -77,9 +78,11 @@ class Accountant:
                 email = emailInList
             else:
                 self.userMap[email] = Attendee(
-                    firstName.strip(), lastName.strip(), email
+                    firstName.strip(), lastName.strip(), email, memberId
                 )
         toReturn = self.userMap[email]
+        if toReturn.id == 0:
+            toReturn.id = memberId
         return toReturn
 
     def addUniqueEvent(self, id, name, date, pointCount):
@@ -157,6 +160,7 @@ class Accountant:
                     firstName=str(sheet["First Name"].iloc[ndx]),
                     lastName=str(sheet["Last Name"].iloc[ndx]),
                     email=str(sheet["Email"].iloc[ndx]),
+                    memberId=int(sheet["User ID"].iloc[ndx]),
                 )
                 # Note that we don't filter out what users to include based
                 # on any event information here. If we've ever processed a
@@ -175,6 +179,7 @@ class Accountant:
                     attendee.points += event.activityPoints
 
     def exportResults(self):
+        userIds = list()
         firstNames = list()
         lastNames = list()
         emails = list()
@@ -182,6 +187,7 @@ class Accountant:
         ranks = list()
         sameRankCount = list()
         inputCols = {
+            "User ID": userIds,
             "First Name": firstNames,
             "Last Name": lastNames,
             "Email": emails,
@@ -207,6 +213,7 @@ class Accountant:
         for attendee in sortedUsers:
             if lastScoreExamined is None:
                 lastScoreExamined = attendee[1].points
+            userIds.append(attendee[1].id)
             firstNames.append(attendee[1].firstName)
             lastNames.append(attendee[1].lastName)
             emails.append(attendee[1].email)
@@ -256,13 +263,13 @@ class Accountant:
 if __name__ == "__main__":
     gdService = gd.createService()
     localInputDir = "/tmp/activityAccountant/input"
-    if os.path.isdir(localInputDir):
-        shutil.rmtree(localInputDir)
-    gd.downloadDirectory(
-        gdService,
-        gd.getFolderIdByName(gdService, "ActivityAccounting"),
-        localInputDir,
-    )
+    # if os.path.isdir(localInputDir):
+    #     shutil.rmtree(localInputDir)
+    # gd.downloadDirectory(
+    #     gdService,
+    #     gd.getFolderIdByName(gdService, "ActivityAccounting"),
+    #     localInputDir,
+    # )
     localOutputDir = "/tmp/activityAccountant/results"
     if os.path.isdir(localOutputDir):
         shutil.rmtree(localOutputDir)
