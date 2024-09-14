@@ -27,13 +27,14 @@ class Event:
 
 
 class Attendee:
-    def __init__(self, firstName, lastName, email, memberId):
+    def __init__(self, firstName, lastName, email, memberId, sourceEventDate):
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
         self.points = 0
         self.id = memberId
         self.attended = list()
+        self.sourceEventDate = sourceEventDate
 
     def __str__(self):
         str = (
@@ -79,7 +80,7 @@ class Accountant:
                 return email
         return None
 
-    def getUser(self, firstName, lastName, email, memberId):
+    def getUser(self, firstName, lastName, email, memberId, eventRecordDate):
         email = email.strip().lower()
         if not self.userMap.__contains__(email):
             # try searching by ID
@@ -88,11 +89,29 @@ class Accountant:
                 # Try searching by name (may have changed email)
                 emailInList = self.getUserFromName(firstName, lastName)
             if emailInList is not None:
-                # we found it above
-                email = emailInList
+                # Check which to keep
+                existing = self.userMap[emailInList]
+                if existing.sourceEventDate > eventRecordDate:
+                    # we found it above
+                    email = emailInList
+                else:
+                    # This entry is newer. Copy the old record over so we can
+                    # keep the events records, but blow away everything else with
+                    # the later versions. Leave the old ID - we'll check on that
+                    # below to make sure we eliminate the 0 record
+                    self.userMap[email] = self.userMap[emailInList]
+                    self.userMap[email].firstName = firstName
+                    self.userMap[email].lastName = lastName
+                    self.userMap[email].email = email
+                    self.userMap[email].date = eventRecordDate
+                    self.userMap.__delitem__(emailInList)
             else:
                 self.userMap[email] = Attendee(
-                    firstName.strip(), lastName.strip(), email, memberId
+                    firstName.strip(),
+                    lastName.strip(),
+                    email,
+                    memberId,
+                    eventRecordDate,
                 )
         toReturn = self.userMap[email]
         if toReturn.id == 0:
@@ -166,7 +185,8 @@ class Accountant:
                 if sheet["Payment Status"].iloc[ndx] != "Paid":
                     # Skip records that are cancelled or pending
                     continue
-                if int(sheet["Event ID"].iloc[ndx]) not in self.eventMap:
+                eventId = int(sheet["Event ID"].iloc[ndx])
+                if eventId not in self.eventMap:
                     # if the event for this registrant record isn't in our
                     # list, ignore it.
                     continue
@@ -175,6 +195,7 @@ class Accountant:
                     lastName=str(sheet["Last Name"].iloc[ndx]),
                     email=str(sheet["Email"].iloc[ndx]),
                     memberId=int(sheet["User ID"].iloc[ndx]),
+                    eventRecordDate=pd.Timestamp(self.eventMap[eventId].date),
                 )
                 # Note that we don't filter out what users to include based
                 # on any event information here. If we've ever processed a
@@ -277,13 +298,13 @@ class Accountant:
 if __name__ == "__main__":
     gdService = gd.createService()
     localInputDir = "/tmp/activityAccountant/input"
-    # if os.path.isdir(localInputDir):
-    #     shutil.rmtree(localInputDir)
-    # gd.downloadDirectory(
-    #     gdService,
-    #     gd.getFolderIdByName(gdService, "ActivityAccounting"),
-    #     localInputDir,
-    # )
+    if os.path.isdir(localInputDir):
+        shutil.rmtree(localInputDir)
+    gd.downloadDirectory(
+        gdService,
+        gd.getFolderIdByName(gdService, "ActivityAccounting"),
+        localInputDir,
+    )
     localOutputDir = "/tmp/activityAccountant/results"
     if os.path.isdir(localOutputDir):
         shutil.rmtree(localOutputDir)
