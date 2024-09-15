@@ -4,6 +4,7 @@ import math
 import datetime as dt
 import xlsxwriter
 import shutil
+import pytz
 
 REGISTRANT_SUBDIR = "registrantExports"
 EVENT_SUBDIR = "eventExports"
@@ -140,8 +141,6 @@ class Accountant:
     def getCreateOrUpdateUser(
         self, firstName, lastName, email, memberId, eventRecordDate
     ):
-        if str(lastName).find("Iovanna") != -1:
-            pass
         email = email.strip().lower()
         existingEmail = self.getUserFromEmailOrAlias(email)
         if existingEmail is None:
@@ -348,7 +347,9 @@ class Accountant:
         os.makedirs(self.outputBaseDir, exist_ok=True)
         resultFilePath = os.path.join(
             self.outputBaseDir,
-            dt.datetime.now().strftime("%Y-%m-%d-%H:%M:%S_")
+            dt.datetime.now()
+            .astimezone(pytz.timezone("America/New_York"))
+            .strftime("%Y-%m-%d-%H:%M:%S_")
             + afterTimestampName
             + ".xlsx",
         )
