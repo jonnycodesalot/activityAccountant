@@ -17,7 +17,8 @@ The script assumes the following directory structure.
     * `...`
   * `emailAliases.xlsx`
 * `<root output dir>`
-  * `scores/`
+  * `scoring/`
+  * `scoringPublic/`
 
 ## Input Files
 
@@ -59,11 +60,11 @@ This works around the problem that some registrations for the same registrant ma
 
 ## Output Files
 
-There is only one output file, scoring.xlsx, meant to help a registrant for a new event understand where they stand based on past activity. This includes the following columns:
+The output files are `<timestamp>_scoring.xlsx` and a email-less version (`<timestamp>_scoringPublic.xlsx`), meant to help a registrant for a new event understand where they stand based on past activity. This includes the following columns:
 * `User ID` - The ID of the registrant. This may be zero if no registrant records had it recorded for them.
 * `First Name`
 * `Last Name`
-* `Email` (omitted by default) - The latest email from all the coalesced records for the registrant
+* `Email` (omitted in public folder) - The latest email from all the coalesced records for the registrant
 * `ActivityPoints` - The total points allocated to the registrants, from all registrations taken as input, including any multipliers
 * `ActivityRank` - The rank of the registrant, according to how many points they have. When registering for an event with limited capacity, this is actually more useful to the registrant than the point count; it shows how many people are ahead of you in line. If multiple registrants have the same number of points, they will all share the rank of the first person with that many points.
 * `SameRankCount` - How many users have the same number of points as a given user. So if your ActivityRank + SameRankCount is 10, then you are at worst 10th in line for any registration.

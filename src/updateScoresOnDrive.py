@@ -50,10 +50,18 @@ if __name__ == "__main__":
     # Create the accountant - this is where the magic happens
     accountant = aa.Accountant(localInputDir, localOutputDir)
     # Export the results
-    resultFilePath = accountant.exportResults()
+    resultFilePathPublic = accountant.exportResults(
+        "scoringPublic", includeEmails=False
+    )
+    resultFilePath = accountant.exportResults("scoring", includeEmails=True)
     # Upload the results to drive
     gd.uploadSpreadsheet(
         gdService,
         gd.getFolderIdByName(gdService, "scoring"),
         resultFilePath,
+    )
+    gd.uploadSpreadsheet(
+        gdService,
+        gd.getFolderIdByName(gdService, "scoringPublic"),
+        resultFilePathPublic,
     )

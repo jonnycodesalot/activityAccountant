@@ -8,7 +8,6 @@ import shutil
 REGISTRANT_SUBDIR = "registrantExports"
 EVENT_SUBDIR = "eventExports"
 EMAIL_ALIAS_FILE = "emailAliases.xlsx"
-SCORE_FILE_SUFFIX = "scoring.xlsx"
 
 # We don't count events whose dates are older than a
 # certain amount (based on the end date)
@@ -263,7 +262,7 @@ class Accountant:
                         event.activityPoints * attendee.eventMultipliers[eventId]
                     )
 
-    def exportResults(self, includeEmails=False):
+    def exportResults(self, afterTimestampName, includeEmails=False):
         userIds = list()
         firstNames = list()
         lastNames = list()
@@ -273,14 +272,14 @@ class Accountant:
         sameRankCount = list()
         inputCols = {
             "User ID": userIds,
-            "First Name": firstNames,
-            "Last Name": lastNames,
-            "ActivityPoints": points,
-            "ActivityRank": ranks,
-            "SameRankCount": sameRankCount,
         }
         if includeEmails:
             inputCols["Email"] = emails
+        inputCols["First Name"] = firstNames
+        inputCols["Last Name"] = lastNames
+        inputCols["ActivityPoints"] = points
+        inputCols["ActivityRank"] = ranks
+        inputCols["SameRankCount"] = sameRankCount
         sortedEvents = sorted(
             self.eventMap.items(), key=lambda event: event[1].date, reverse=True
         )
@@ -331,7 +330,9 @@ class Accountant:
         os.makedirs(self.outputBaseDir, exist_ok=True)
         resultFilePath = os.path.join(
             self.outputBaseDir,
-            dt.datetime.now().strftime("%Y-%m-%d-%H:%M:%S_") + SCORE_FILE_SUFFIX,
+            dt.datetime.now().strftime("%Y-%m-%d-%H:%M:%S_")
+            + afterTimestampName
+            + ".xlsx",
         )
         # export to excel, freezing the top row
         writer = pd.ExcelWriter(resultFilePath)
