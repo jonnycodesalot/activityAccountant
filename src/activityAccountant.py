@@ -263,7 +263,7 @@ class Accountant:
                         event.activityPoints * attendee.eventMultipliers[eventId]
                     )
 
-    def exportResults(self):
+    def exportResults(self, includeEmails=False):
         userIds = list()
         firstNames = list()
         lastNames = list()
@@ -275,11 +275,12 @@ class Accountant:
             "User ID": userIds,
             "First Name": firstNames,
             "Last Name": lastNames,
-            "Email": emails,
             "ActivityPoints": points,
             "ActivityRank": ranks,
             "SameRankCount": sameRankCount,
         }
+        if includeEmails:
+            inputCols["Email"] = emails
         sortedEvents = sorted(
             self.eventMap.items(), key=lambda event: event[1].date, reverse=True
         )
@@ -301,7 +302,8 @@ class Accountant:
             userIds.append(attendee[1].id)
             firstNames.append(attendee[1].firstName)
             lastNames.append(attendee[1].lastName)
-            emails.append(attendee[1].email)
+            if includeEmails:
+                emails.append(attendee[1].email)
             points.append(attendee[1].points)
             for eventId, event in self.eventMap.items():
                 if int(eventId) in attendee[1].eventMultipliers:
