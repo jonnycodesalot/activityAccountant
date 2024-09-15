@@ -1,5 +1,5 @@
-name: recalculate-activity-points
-run-name: ${{ github.actor }} - Recalculate Member Activity Points
+name: Update Activity Scores
+run-name: Update Activity Scores ${{ github.actor }}
 on: workflow_dispatch
 jobs:
   recalculate-points:
@@ -18,7 +18,7 @@ jobs:
         run: echo "$credential_content" > /tmp/activityAccountant/credentials.json
 
       - name: Re-run scores
-        run: GOOGLE_APPLICATION_CREDENTIALS="/tmp/activityAccountant/credentials.json" python3 src/activityAccountant.py
+        run: GOOGLE_APPLICATION_CREDENTIALS="/tmp/activityAccountant/credentials.json" python3 src/updateScoresOnDrive.py
 
     
       

@@ -1,7 +1,6 @@
 import pandas as pd
 import os
 import math
-import googleDriveClient as gd
 import datetime as dt
 import xlsxwriter
 import shutil
@@ -27,7 +26,7 @@ class Event:
         return f"{self.name} {self.date} - {self.activityPoints} points\n"
 
 
-class Attendee:
+class Registrant:
     def __init__(self, firstName, lastName, email, memberId, sourceEventDate):
         self.firstName = firstName
         self.lastName = lastName
@@ -61,6 +60,9 @@ class Accountant:
         self.outputBaseDir = outputDir
         self.aliases = dict()
         self.loadEmailAliases()
+        self.buildEventList()
+        self.buildAttendeeList()
+        self.assignPoints()
 
     def loadEmailAliases(self):
         # We support the use of an aliases file to deal with the fact that many
@@ -149,7 +151,7 @@ class Accountant:
             return existing
         else:
             # Make a new record
-            newRecord = Attendee(
+            newRecord = Registrant(
                 firstName.strip(),
                 lastName.strip(),
                 email,
@@ -344,31 +346,3 @@ class Accountant:
         writer.close()
         # Return the path to the file
         return resultFilePath
-
-
-if __name__ == "__main__":
-    gdService = gd.createService()
-    localInputDir = "/tmp/activityAccountant/input"
-    if os.path.isdir(localInputDir):
-        shutil.rmtree(localInputDir)
-    gd.downloadExcelDirectory(
-        gdService,
-        gd.getFolderIdByName(gdService, "ActivityAccounting"),
-        localInputDir,
-        ignoreNames=["scoring"],
-    )
-    localOutputDir = "/tmp/activityAccountant/results"
-    if os.path.isdir(localOutputDir):
-        shutil.rmtree(localOutputDir)
-    accountant = Accountant(localInputDir, localOutputDir)
-    accountant.buildEventList()
-    accountant.buildAttendeeList()
-    accountant.printEvents()
-    accountant.assignPoints()
-    # accountant.printAttendees()
-    resultFilePath = accountant.exportResults()
-    gd.uploadSpreadsheet(
-        gdService,
-        gd.getFolderIdByName(gdService, "scoring"),
-        resultFilePath,
-    )
