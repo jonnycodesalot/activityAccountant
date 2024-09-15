@@ -64,7 +64,7 @@ class Accountant:
         self.loadEmailAliases()
         self.buildEventList()
         self.buildAttendeeList()
-        # self.eliminateOutdatedRegistrants()
+        self.eliminateOutdatedRegistrants()
         self.assignPoints()
 
     def eliminateOutdatedRegistrants(self):
@@ -140,6 +140,8 @@ class Accountant:
     def getCreateOrUpdateUser(
         self, firstName, lastName, email, memberId, eventRecordDate
     ):
+        if str(lastName).find("Iovanna") != -1:
+            pass
         email = email.strip().lower()
         existingEmail = self.getUserFromEmailOrAlias(email)
         if existingEmail is None:
@@ -157,7 +159,7 @@ class Accountant:
                 existing.firstName = firstName
                 existing.lastName = lastName
                 existing.email = email
-                existing.date = eventRecordDate
+                existing.sourceEventDate = eventRecordDate
                 self.userMap.__delitem__(existingEmail)
                 self.userMap[email] = existing
             # If the old one didn't have an ID, overwrite it with the new one
