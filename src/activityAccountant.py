@@ -12,6 +12,9 @@ EMAIL_ALIAS_FILE = "emailAliases.xlsx"
 # We don't count events whose dates are older than a
 # certain amount (based on the end date)
 MAXIMUM_EVENT_AGE = pd.DateOffset(years=3)
+OLDEST_REGISTRANT_ALLOWED = dt.datetime(
+    year=2023, month=9, day=1, hour=9, minute=0, second=0
+)
 
 
 class Event:
@@ -61,17 +64,16 @@ class Accountant:
         self.loadEmailAliases()
         self.buildEventList()
         self.buildAttendeeList()
-        # self.eliminateRegistrantsOlderThan(pd.DateOffset(years=1, months=6))
+        self.eliminateOutdatedRegistrants()
         self.assignPoints()
 
-    def eliminateRegistrantsOlderThan(self, timespan):
-        # if your latest registration is older than the timespan,
+    def eliminateOutdatedRegistrants(self):
+        # if your latest registration is older than OLDEST_REGISTRANT_ALLOWED,
         # then your record is thrown out.
         toDelete = list()
         for email, member in self.userMap.items():
-            if (
-                pd.to_datetime(member.sourceEventDate)
-                < pd.to_datetime("now") - timespan
+            if pd.to_datetime(member.sourceEventDate) < pd.to_datetime(
+                OLDEST_REGISTRANT_ALLOWED
             ):
                 toDelete.append(email)
         for email in toDelete:
