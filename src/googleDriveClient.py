@@ -23,7 +23,7 @@ def createService():
 
 
 # To list folders
-def downloadDirectory(service, fileId, des):
+def downloadDirectory(service, fileId, des, recursive=True):
 
     #     var q = "mimeType = 'application/vnd.google-apps.folder' and '"+folderId+"' in parents";
     # var children = Drive.Files.list({q:q});
@@ -46,12 +46,13 @@ def downloadDirectory(service, fileId, des):
         os.makedirs(des, exist_ok=True)
     for item in folder:
         if str(item["mimeType"]) == str("application/vnd.google-apps.folder"):
-            if not os.path.isdir(des + "/" + item["name"]):
-                os.makedirs(des + "/" + item["name"], exist_ok=True)
-            print(item["name"])
-            downloadDirectory(
-                service, item["id"], des + "/" + item["name"]
-            )  # LOOP un-till the files are found
+            if recursive:
+                if not os.path.isdir(des + "/" + item["name"]):
+                    os.makedirs(des + "/" + item["name"], exist_ok=True)
+                print(item["name"])
+                downloadDirectory(
+                    service, item["id"], des + "/" + item["name"]
+                )  # LOOP un-till the files are found
         elif item["mimeType"] == str(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         ):
