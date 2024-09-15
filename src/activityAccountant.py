@@ -61,7 +61,21 @@ class Accountant:
         self.loadEmailAliases()
         self.buildEventList()
         self.buildAttendeeList()
+        # self.eliminateRegistrantsOlderThan(pd.DateOffset(years=1, months=6))
         self.assignPoints()
+
+    def eliminateRegistrantsOlderThan(self, timespan):
+        # if your latest registration is older than the timespan,
+        # then your record is thrown out.
+        toDelete = list()
+        for email, member in self.userMap.items():
+            if (
+                pd.to_datetime(member.sourceEventDate)
+                < pd.to_datetime("now") - timespan
+            ):
+                toDelete.append(email)
+        for email in toDelete:
+            self.userMap.__delitem__(email)
 
     def loadEmailAliases(self):
         # We support the use of an aliases file to deal with the fact that many
