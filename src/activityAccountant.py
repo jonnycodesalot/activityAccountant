@@ -34,23 +34,23 @@ class Attendee:
         self.email = email
         self.points = 0
         self.id = memberId
-        self.attended = list()
+        self.eventMultipliers = dict()
         self.sourceEventDate = sourceEventDate
 
     def __str__(self):
         str = (
             f"{self.firstName} {self.lastName} - {self.points} points - {self.email}\n"
         )
-        for eventId in self.attended:
+        for eventId in self.eventMultipliers:
             str += f"\tEvent {eventId}"
         return str
 
-    def addEvent(self, eventId):
+    def addEvent(self, eventId, multiplier=1):
         # Never allow the same event to be recorded twice for a registrant;
         # They may have the same event registered in multiple rows in our
         # input, due to clerical error. Let's be smart enough to ignore it
-        if int(eventId) not in self.attended:
-            self.attended.append(int(eventId))
+        if int(eventId) not in self.eventMultipliers:
+            self.eventMultipliers[int(eventId)] = multiplier
 
 
 class Accountant:
@@ -244,15 +244,22 @@ class Accountant:
                 # a record in the output, even if it's always 0 points.
                 # Otherwise, we risk leaving old scores around for people
                 # who haven't earned in a very long time.
-                attendee.addEvent(int(sheet["Event ID"].iloc[ndx]))
+                multiplier = 1
+                if "multiplier" in sheet:
+                    val = sheet["multiplier"].iloc[ndx]
+                    if val and str("val") != "":
+                        multiplier = int(val)
+                attendee.addEvent(int(sheet["Event ID"].iloc[ndx]), multiplier)
 
     def assignPoints(self):
         # iterate over events, and assign points to every user that has that event
         for eventId, event in self.eventMap.items():
             eventId = int(eventId)
             for attendeeEmail, attendee in self.userMap.items():
-                if eventId in attendee.attended:
-                    attendee.points += event.activityPoints
+                if eventId in attendee.eventMultipliers:
+                    attendee.points += (
+                        event.activityPoints * attendee.eventMultipliers[eventId]
+                    )
 
     def exportResults(self):
         userIds = list()
@@ -295,10 +302,13 @@ class Accountant:
             emails.append(attendee[1].email)
             points.append(attendee[1].points)
             for eventId, event in self.eventMap.items():
-                if int(eventId) in attendee[1].attended:
-                    inputCols[event.name].append(event.activityPoints)
+                if int(eventId) in attendee[1].eventMultipliers:
+                    inputCols[event.name].append(
+                        event.activityPoints
+                        * attendee[1].eventMultipliers[int(eventId)]
+                    )
                 else:
-                    inputCols[event.name].append(" ")
+                    inputCols[event.name].append("")
             if attendee[1].points == lastScoreExamined:
                 numberWithSameRank += 1
             else:
