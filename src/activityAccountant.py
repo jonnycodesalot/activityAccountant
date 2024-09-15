@@ -351,10 +351,11 @@ if __name__ == "__main__":
     localInputDir = "/tmp/activityAccountant/input"
     if os.path.isdir(localInputDir):
         shutil.rmtree(localInputDir)
-    gd.downloadDirectory(
+    gd.downloadExcelDirectory(
         gdService,
         gd.getFolderIdByName(gdService, "ActivityAccounting"),
         localInputDir,
+        ignoreNames=["scoring"],
     )
     localOutputDir = "/tmp/activityAccountant/results"
     if os.path.isdir(localOutputDir):

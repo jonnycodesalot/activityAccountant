@@ -23,7 +23,7 @@ def createService():
 
 
 # To list folders
-def downloadDirectory(service, fileId, des, recursive=True):
+def downloadExcelDirectory(service, fileId, des, ignoreNames=[], recursive=True):
 
     #     var q = "mimeType = 'application/vnd.google-apps.folder' and '"+folderId+"' in parents";
     # var children = Drive.Files.list({q:q});
@@ -45,21 +45,27 @@ def downloadDirectory(service, fileId, des, recursive=True):
     if not os.path.isdir(des):
         os.makedirs(des, exist_ok=True)
     for item in folder:
-        if str(item["mimeType"]) == str("application/vnd.google-apps.folder"):
-            if recursive:
-                if not os.path.isdir(des + "/" + item["name"]):
-                    os.makedirs(des + "/" + item["name"], exist_ok=True)
+        if item["name"] not in ignoreNames:
+            if str(item["mimeType"]) == str("application/vnd.google-apps.folder"):
+                if recursive:
+                    if not os.path.isdir(des + "/" + item["name"]):
+                        os.makedirs(des + "/" + item["name"], exist_ok=True)
+                    print(item["name"])
+                    downloadExcelDirectory(
+                        service,
+                        item["id"],
+                        des + "/" + item["name"],
+                        recursive=recursive,
+                    )  # LOOP un-till the files are found
+            elif item["mimeType"] == str(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ):
+                downloadSpreadsheet(service, item["id"], item["name"], des)
                 print(item["name"])
-                downloadDirectory(
-                    service, item["id"], des + "/" + item["name"]
-                )  # LOOP un-till the files are found
-        elif item["mimeType"] == str(
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        ):
-            downloadSpreadsheet(service, item["id"], item["name"], des)
-            print(item["name"])
-        else:
-            print(f"Skipping download of non-spreadsheet file {item['name']}")
+            else:
+                print(f"Skipping download of non-spreadsheet file {item['name']}")
+        # else:
+        #     print(f"Ignoring item {item["name"]} as requested.")
     return folder
 
 
@@ -114,7 +120,7 @@ def main():
             ),
         )
 
-        downloadDirectory(
+        downloadExcelDirectory(
             service, getFolderIdByName(service, "ActivityAccounting"), "/tmp"
         )
         uploadSpreadsheet(
