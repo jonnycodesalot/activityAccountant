@@ -8,6 +8,7 @@ import shutil
 
 REGISTRANT_SUBDIR = "registrantExports/"
 EVENT_SUBDIR = "eventExports/"
+EMAIL_ALIAS_FILE = "emailAliases.xlsx"
 SCORE_FILE_SUFFIX = "scoring.xlsx"
 
 # We don't count events whose dates are older than a
@@ -45,6 +46,9 @@ class Attendee:
         return str
 
     def addEvent(self, eventId):
+        # Never allow the same event to be recorded twice for a registrant;
+        # They may have the same event registered in multiple rows in our
+        # input, due to clerical error. Let's be smart enough to ignore it
         if int(eventId) not in self.attended:
             self.attended.append(int(eventId))
 
@@ -55,14 +59,47 @@ class Accountant:
         self.eventMap = dict()
         self.inputBaseDir = inputDir
         self.outputBaseDir = outputDir
+        self.aliases = dict()
+        self.loadEmailAliases()
 
-    def combineDuplicateUsers(self):
-        # Placeholder. We're keying users on email address, but if we
-        # have duplicates to deal with, we can combine records in the userMap
-        # here before we assign points from the events list.
-        pass
+    def loadEmailAliases(self):
+        # We support the use of an aliases file to deal with the fact that many
+        # users may change emails from event to event, throwing off the keying
+        # mechanism. The aliases file is an excel spreadsheet, with one column
+        # added for every user that has multiple emails. The title row is ignored
+        # (put the person's name, for documentation), but every cell in that colum
+        # is taken to be a different email for the same person.
+        #
+        # This function reads the file and builds a dictionary of list to look up
+        # aliases as it builds the user list.
+        aliasData = self.openAndValidateSheet(self.inputBaseDir, EMAIL_ALIAS_FILE)
+        for column in aliasData.columns:
+            aliasList = list()
+            [
+                aliasList.append(str(alias).strip().lower())
+                for alias in aliasData[column]
+            ]
+            for alias in aliasList:
+                reducedList = aliasList.copy()
+                reducedList.remove(alias)
+                self.aliases[alias] = reducedList
+
+    def getUserFromEmailOrAlias(self, email):
+        # Given a user's email, will return the email that is a key into that
+        # user's record (which may be the same email, or an alias). If no such
+        # user has been recorded, returns None.
+        if self.userMap.__contains__(email):
+            return email
+        elif email in self.aliases:
+            aliasList = self.aliases[email]
+            for alias in aliasList:
+                if alias in self.userMap:
+                    return alias
+        return None
 
     def getUserFromName(self, firstName, lastName):
+        # Matches record by name, using a basically exact compare. Unlikely
+        # to be useful very often.
         for email, user in self.userMap.items():
             if (
                 user.firstName.strip().lower() == firstName.strip().lower()
@@ -72,51 +109,55 @@ class Accountant:
         return None
 
     def getUserFromId(self, memberId):
+        # Gets the user based on their member ID. This is the ideal case,
+        # but we don't use it exclusively because new members will generally
+        # not have an ID associated with their first registration.
         if memberId == 0:
-            # Can't map based on zero
+            # Can't map based on zero. Return nothing.
             return None
         for email, user in self.userMap.items():
             if user.id == memberId:
                 return email
         return None
 
-    def getUser(self, firstName, lastName, email, memberId, eventRecordDate):
+    def getCreateOrUpdateUser(
+        self, firstName, lastName, email, memberId, eventRecordDate
+    ):
         email = email.strip().lower()
-        if not self.userMap.__contains__(email):
+        existingEmail = self.getUserFromEmailOrAlias(email)
+        if existingEmail is None:
             # try searching by ID
-            emailInList = self.getUserFromId(memberId)
-            if emailInList is None:
+            existingEmail = self.getUserFromId(memberId)
+            if existingEmail is None:
                 # Try searching by name (may have changed email)
-                emailInList = self.getUserFromName(firstName, lastName)
-            if emailInList is not None:
-                # Check which to keep
-                existing = self.userMap[emailInList]
-                if existing.sourceEventDate > eventRecordDate:
-                    # we found it above
-                    email = emailInList
-                else:
-                    # This entry is newer. Copy the old record over so we can
-                    # keep the events records, but blow away everything else with
-                    # the later versions. Leave the old ID - we'll check on that
-                    # below to make sure we eliminate the 0 record
-                    self.userMap[email] = self.userMap[emailInList]
-                    self.userMap[email].firstName = firstName
-                    self.userMap[email].lastName = lastName
-                    self.userMap[email].email = email
-                    self.userMap[email].date = eventRecordDate
-                    self.userMap.__delitem__(emailInList)
-            else:
-                self.userMap[email] = Attendee(
-                    firstName.strip(),
-                    lastName.strip(),
-                    email,
-                    memberId,
-                    eventRecordDate,
-                )
-        toReturn = self.userMap[email]
-        if toReturn.id == 0:
-            toReturn.id = memberId
-        return toReturn
+                existingEmail = self.getUserFromName(firstName, lastName)
+        if existingEmail is not None:
+            # Check which to keep
+            existing = self.userMap[existingEmail]
+            if existing.sourceEventDate < eventRecordDate:
+                # This entry is newer. Leave the old ID - we'll check on that
+                # below to make sure we eliminate the 0 record
+                existing.firstName = firstName
+                existing.lastName = lastName
+                existing.email = email
+                existing.date = eventRecordDate
+                self.userMap.__delitem__(existingEmail)
+                self.userMap[email] = existing
+            # If the old one didn't have an ID, overwrite it with the new one
+            if existing.id == 0:
+                existing.id = memberId
+            return existing
+        else:
+            # Make a new record
+            newRecord = Attendee(
+                firstName.strip(),
+                lastName.strip(),
+                email,
+                memberId,
+                eventRecordDate,
+            )
+            self.userMap[email] = newRecord
+            return newRecord
 
     def addUniqueEvent(self, id, name, date, pointCount):
         name = name.strip()
@@ -135,7 +176,7 @@ class Accountant:
     def openAndValidateSheet(self, directory, file):
         if (not file.endswith(".xlsx")) or file.startswith("~"):
             return None
-        spreadsheet = pd.ExcelFile(directory + file)
+        spreadsheet = pd.ExcelFile(os.path.join(directory, file))
         sheetCount = spreadsheet.sheet_names.__len__()
         if sheetCount != 1:
             raise Exception(
@@ -190,7 +231,7 @@ class Accountant:
                     # if the event for this registrant record isn't in our
                     # list, ignore it.
                     continue
-                attendee = self.getUser(
+                attendee = self.getCreateOrUpdateUser(
                     firstName=str(sheet["First Name"].iloc[ndx]),
                     lastName=str(sheet["Last Name"].iloc[ndx]),
                     email=str(sheet["Email"].iloc[ndx]),
