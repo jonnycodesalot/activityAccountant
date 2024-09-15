@@ -22,6 +22,26 @@ def createService():
     )
 
 
+def getChildId(service, parentId, childName):
+    q = "'" + parentId + "' in parents"
+    results = (
+        service.files()
+        .list(
+            pageSize=1000,
+            q=q,
+            fields="nextPageToken, files(id, name, mimeType)",
+            includeItemsFromAllDrives=True,
+            supportsAllDrives=True,
+        )
+        .execute()
+    )
+    folder = results.get("files", [])
+    for item in folder:
+        if item["name"] == childName:
+            return item["id"]
+    return None
+
+
 # To list folders
 def downloadExcelDirectory(service, fileId, des, ignoreNames=[], recursive=True):
 
@@ -60,7 +80,7 @@ def downloadExcelDirectory(service, fileId, des, ignoreNames=[], recursive=True)
             elif item["mimeType"] == str(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             ):
-                downloadSpreadsheet(service, item["id"], item["name"], des)
+                downloadExcel(service, item["id"], item["name"], des)
                 print(item["name"])
             else:
                 print(f"Skipping download of non-spreadsheet file {item['name']}")
@@ -70,20 +90,17 @@ def downloadExcelDirectory(service, fileId, des, ignoreNames=[], recursive=True)
 
 
 # To Download Files
-def downloadSpreadsheet(service, dowid, name, dfilespath):
-    request = service.files().get_media(fileId=dowid)
+def downloadExcel(service, fileId, fileName, destDir):
+    request = service.files().get_media(fileId=fileId)
     fh = io.BytesIO()
     downloader = http.MediaIoBaseDownload(fh, request)
     done = False
     while done is False:
         status, done = downloader.next_chunk()
         print("Download %d%%." % int(status.progress() * 100))
-    with io.open(dfilespath + "/" + name, "wb") as f:
+    with io.open(destDir + "/" + fileName, "wb") as f:
         fh.seek(0)
         f.write(fh.read())
-
-
-# def uploadSpreadsheet(service,)
 
 
 def main():

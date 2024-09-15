@@ -5,8 +5,8 @@ import datetime as dt
 import xlsxwriter
 import shutil
 
-REGISTRANT_SUBDIR = "registrantExports/"
-EVENT_SUBDIR = "eventExports/"
+REGISTRANT_SUBDIR = "registrantExports"
+EVENT_SUBDIR = "eventExports"
 EMAIL_ALIAS_FILE = "emailAliases.xlsx"
 SCORE_FILE_SUFFIX = "scoring.xlsx"
 
