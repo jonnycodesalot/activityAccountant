@@ -1,5 +1,5 @@
 name: Update Activity Scores
-run-name: Update Activity Scores ${{ github.actor }}
+run-name: Update Activity Scores (run by ${{ github.actor }})
 on: workflow_dispatch
 jobs:
   recalculate-points:
