@@ -42,6 +42,8 @@ def downloadDirectory(service, fileId, des):
     logging.debug(results)
     folder = results.get("files", [])
     logging.debug(folder)
+    if not os.path.isdir(des):
+        os.makedirs(des, exist_ok=True)
     for item in folder:
         if str(item["mimeType"]) == str("application/vnd.google-apps.folder"):
             if not os.path.isdir(des + "/" + item["name"]):
