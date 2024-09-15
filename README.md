@@ -2,9 +2,9 @@
 
 ActivityAccountant tracks activity points earned by members of a club or volunteer organization. Scripts are written to ingest spreadsheets exported by Joomla or another CCM, and create an output spreadsheet that totals the activity points earned by registrant based on what events they attended.
 
-## Directory Structure
+# Directory Structure
 
-The script assumes the following directory structure:
+The script assumes the following directory structure.
 
 * `<root input dir>`/
   * `eventExports/`
@@ -19,7 +19,11 @@ The script assumes the following directory structure:
 * `<root output dir>`
   * `scores/`
 
-All spreadsheets must be *Excel* spreadsheets with an `.xlsx` extension. This is because `xlsx` is the format exported by the Joomla Events plugin, which is the target use case for this script.
+## Input Files
+
+All spreadsheets must be *Excel* spreadsheets with an `.xlsx` extension. This is because `xlsx` is the format exported by the Joomla Events plugin, which is the target use case for this script. 
+
+When downloading, the script will ignore all content that isn't an excel spreadsheet or a folder, so you can put readmes, instructions, etc. in there no problem.
 
 ### eventExports/
 
@@ -52,3 +56,17 @@ Note that where records are coalesced (due to email, ID, or name), the fields fr
 ### emailAliases.xlsx
 
 This works around the problem that some registrations for the same registrant may be different email addresses, different exact spellings of their names, and may lack the User ID. Each column is for a single registrant, though the top row is ignored (put the registrant's name for documentation purposes). Every other cell in the column is taken to be an email address for that registrant. When enumerating registrations, the script will coalesce all the registrations for the emails in a column to belong to the same registrant.
+
+## Output Files
+
+# GitHub Actions and Google Drive
+
+There are some GitHub workflows defined to allow execution of the tracker without setting up a local environment.
+
+**Note** that hwen using Google Drive, the parent folder of all directories is taken to be `ActivityAccountant`, and this search is performed by name among all folders shared with the relevant user. So if you have multiple folders by this name available, things will bbreak.
+
+## GitHub Authentication
+
+Set up a secret in your GitHub repo/fork called `GOOGLE_APPLICATION_CREDENTIALS`, which contains the Google Drive credentials from a generated credentials.json file. See the web for instructions on how to obtain this.
+
+It's recommended to use a service account rather than an individual credentials, for security reasons. In either case, you can share the root folder with the relevant account the way you would share any other Google Drive document.
