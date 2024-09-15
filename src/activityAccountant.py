@@ -64,7 +64,7 @@ class Accountant:
         self.loadEmailAliases()
         self.buildEventList()
         self.buildAttendeeList()
-        self.eliminateOutdatedRegistrants()
+        # self.eliminateOutdatedRegistrants()
         self.assignPoints()
 
     def eliminateOutdatedRegistrants(self):
