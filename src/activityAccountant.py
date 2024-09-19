@@ -16,6 +16,8 @@ MAXIMUM_EVENT_AGE = pd.DateOffset(years=3)
 OLDEST_REGISTRANT_ALLOWED = dt.datetime(
     year=2023, month=9, day=1, hour=9, minute=0, second=0
 )
+# Overwritten by "now" in code if earlier than now.
+LATEST_EVENT_END_DATE = pd.to_datetime("2024/09/30")
 
 
 class Event:
@@ -213,6 +215,12 @@ class Accountant:
     def buildEventList(self):
         eventDir = os.path.join(self.inputBaseDir, EVENT_SUBDIR)
         currTime = pd.to_datetime("now")
+        # LATEST_EVENT_END_DATE can force us to let
+        # more events in, but it can't force us to leave out events that
+        #  have finished
+        latestAllowedEventEndDate = LATEST_EVENT_END_DATE
+        if latestAllowedEventEndDate is None or latestAllowedEventEndDate < currTime:
+            latestAllowedEventEndDate = currTime
         for file in os.listdir(eventDir):
             sheet = self.openAndValidateSheet(eventDir, file)
             if sheet is None:
@@ -229,9 +237,9 @@ class Accountant:
                         f"***Event {eventName}'s end date is older than the maximum event age. It will not be counted."
                     )
                     continue
-                if pd.to_datetime(eventEndDate) > (currTime):
+                if pd.to_datetime(eventEndDate) > (latestAllowedEventEndDate):
                     print(
-                        f"***Event {eventName} has not yet ended. It will not be counted."
+                        f"***Event {eventName} ends after the latest allowed event end date. It will not be counted."
                     )
                     continue
                 eventBeginDate = sheet["event_date"].iloc[ndx]
