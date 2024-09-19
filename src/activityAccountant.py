@@ -152,6 +152,13 @@ class Accountant:
         if existingEmail is not None:
             # Check which to keep
             existing = self.userMap[existingEmail]
+            # Check if there is a duplicate email (to the extent we can), and if so, fail out.
+            if existing.id != 0 and memberId != 0 and memberId != existing.id:
+                raise Exception(
+                    f"It appears that two distinct members, {firstName} {lastName} "
+                    + f"(ID {memberId}), and {existing.firstName} {existing.lastName} "
+                    + f"(ID {existing.id}), are using the same email address. This is not allowed."
+                )
             if existing.sourceEventDate < eventRecordDate:
                 # This entry is newer. Leave the old ID - we'll check on that
                 # below to make sure we eliminate the 0 record
