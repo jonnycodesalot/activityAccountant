@@ -271,17 +271,28 @@ class Accountant:
                     memberId=int(sheet["User ID"].iloc[ndx]),
                     eventRecordDate=pd.Timestamp(self.eventMap[eventId].date),
                 )
-                # Note that we don't filter out what users to include based
-                # on any event information here. If we've ever processed a
-                # record for them, we want to make sure we continue having
-                # a record in the output, even if it's always 0 points.
-                # Otherwise, we risk leaving old scores around for people
-                # who haven't earned in a very long time.
+                # Cull any registrations that were actually NoShowed.
+                if "Attendance" in sheet:
+                    val = sheet["Attendance"].iloc[ndx]
+                    if val and str(val) != "" and str(val) != "nan":
+                        tempstr = str(val)
+                        if str(val) == "NoShow":
+                            # Skip this registration...they didn't show up, so they get no points.
+                            continue
+                        else:
+                            raise Exception(
+                                f"The 'Attendance' field has an "
+                                + f"unexpected value in row {ndx}. It must be 'NoShow' or empty"
+                            )
+                # Apply a special multiplier if one exists. This is used for custom events,
+                # to give a user variable number of points for a single-point event
+                # (say, construction work)
                 multiplier = 1
                 if "multiplier" in sheet:
                     val = sheet["multiplier"].iloc[ndx]
-                    if val and str("val") != "":
+                    if val and str(val) != "" and str(val) != "nan":
                         multiplier = int(val)
+                # Mark the attendee for this event, with the specified multiplier
                 attendee.addEvent(int(sheet["Event ID"].iloc[ndx]), multiplier)
 
     def assignPoints(self):
