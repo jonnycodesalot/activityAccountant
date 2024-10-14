@@ -60,8 +60,15 @@ if __name__ == "__main__":
         gd.getFolderIdByName(gdService, "scoring"),
         resultFilePath,
     )
+    publicScoresFolderId = gd.getFolderIdByName(gdService, "scoringPublic")
     gd.uploadSpreadsheet(
         gdService,
-        gd.getFolderIdByName(gdService, "scoringPublic"),
+        publicScoresFolderId,
         resultFilePathPublic,
+    )
+    gd.updateSpreadsheet(
+        gdService,
+        gd.getChildId(gdService, publicScoresFolderId, "latest.xlsx"),
+        resultFilePathPublic,
+        "latest.xlsx",
     )
