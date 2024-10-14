@@ -42,6 +42,27 @@ def getChildId(service, parentId, childName):
     return None
 
 
+def updateSpreadsheet(service, fileId, localPath, remoteName=None):
+    if not remoteName:
+        remoteName = os.path.split(localPath)[-1]
+    file_metadata = {
+        "name": remoteName,
+        "fileId": [fileId],
+    }
+    abspath = os.path.abspath(localPath)
+    media = MediaFileUpload(
+        abspath,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        resumable=True,
+    )
+    service.files().update(
+        fileId=fileId,
+        body=file_metadata,
+        media_body=media,
+        supportsAllDrives=True,
+    ).execute()
+
+
 # To list folders
 def downloadExcelDirectory(service, fileId, des, ignoreNames=[], recursive=True):
 
