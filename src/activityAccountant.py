@@ -17,7 +17,7 @@ OLDEST_REGISTRANT_ALLOWED = dt.datetime(
     year=2023, month=9, day=1, hour=9, minute=0, second=0
 )
 # Overwritten by "now" in code if earlier than now.
-LATEST_EVENT_END_DATE = pd.to_datetime("2024/09/30")
+LATEST_EVENT_END_DATE = pd.to_datetime("2024/12/23")
 
 
 class Event:
@@ -264,11 +264,22 @@ class Accountant:
                     # if the event for this registrant record isn't in our
                     # list, ignore it.
                     continue
+                memberId = sheet["User ID"].iloc[ndx]
+                group = None
+                if "Group: " in sheet:
+                    group = sheet["Group: "].iloc[ndx]
+                if group and str(group) != "" and str(group) != "nan":
+                    # If they're part of a group signup, the memberId
+                    # will be the person who signed everyone up. Omit
+                    # the ID and match on the other attributes
+                    memberId = 0
+                else:
+                    memberId = int(memberId)
                 attendee = self.getCreateOrUpdateUser(
                     firstName=str(sheet["First Name"].iloc[ndx]),
                     lastName=str(sheet["Last Name"].iloc[ndx]),
                     email=str(sheet["Email"].iloc[ndx]),
-                    memberId=int(sheet["User ID"].iloc[ndx]),
+                    memberId=memberId,
                     eventRecordDate=pd.Timestamp(self.eventMap[eventId].date),
                 )
                 # Cull any registrations that were actually NoShowed.
