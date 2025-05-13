@@ -232,12 +232,15 @@ class Accountant:
                     continue
                 eventName = sheet["title"].iloc[ndx]
                 eventEndDate = sheet["event_end_date"].iloc[ndx]
-                if pd.to_datetime(eventEndDate) < (currTime - MAXIMUM_EVENT_AGE):
+                if str(eventEndDate).startswith("0000"):
+                    eventEndDate = sheet["event_date"].iloc[ndx]
+                eventEndDate = pd.to_datetime(eventEndDate)
+                if eventEndDate < (currTime - MAXIMUM_EVENT_AGE):
                     print(
                         f"***Event {eventName}'s end date is older than the maximum event age. It will not be counted."
                     )
                     continue
-                if pd.to_datetime(eventEndDate) > (latestAllowedEventEndDate):
+                if eventEndDate > (latestAllowedEventEndDate):
                     print(
                         f"***Event {eventName} ends after the latest allowed event end date. It will not be counted."
                     )
