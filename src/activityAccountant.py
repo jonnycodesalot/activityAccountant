@@ -21,9 +21,10 @@ LATEST_EVENT_END_DATE = pd.to_datetime("2025/03/17")
 
 
 class Event:
-    def __init__(self, id, name, date, activityPoints):
+    def __init__(self, id, name, date, endDate, activityPoints):
         self.name = name
         self.date = date
+        self.endDate = endDate
         self.activityPoints = activityPoints
         self.id = int(id)
 
@@ -186,10 +187,12 @@ class Accountant:
             self.userMap[email] = newRecord
             return newRecord
 
-    def addUniqueEvent(self, id, name, date, pointCount):
+    def addUniqueEvent(self, id, name, date, endDate, pointCount):
         name = name.strip()
         if not self.eventMap.__contains__(id):
-            self.eventMap[id] = Event(int(id), str(name), str(date), int(pointCount))
+            self.eventMap[id] = Event(
+                int(id), str(name), str(date), str(endDate), int(pointCount)
+            )
         return self.eventMap[id]
 
     def printAttendees(self):
@@ -248,7 +251,11 @@ class Accountant:
                 eventBeginDate = sheet["event_date"].iloc[ndx]
                 activityPoints = activityPoints
                 self.addUniqueEvent(
-                    sheet["id"].iloc[ndx], eventName, eventBeginDate, activityPoints
+                    sheet["id"].iloc[ndx],
+                    eventName,
+                    eventBeginDate,
+                    eventEndDate,
+                    activityPoints,
                 )
 
     def buildAttendeeList(self):
@@ -338,7 +345,7 @@ class Accountant:
         inputCols["ActivityRank"] = ranks
         inputCols["SameRankCount"] = sameRankCount
         sortedEvents = sorted(
-            self.eventMap.items(), key=lambda event: event[1].date, reverse=True
+            self.eventMap.items(), key=lambda event: event[1].endDate, reverse=True
         )
         for event in sortedEvents:
             if event[1].name in inputCols:
