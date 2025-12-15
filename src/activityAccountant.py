@@ -17,7 +17,7 @@ OLDEST_REGISTRANT_ALLOWED = dt.datetime(
     year=2023, month=9, day=1, hour=9, minute=0, second=0
 )
 # Overwritten by "now" in code if earlier than now.
-LATEST_EVENT_END_DATE = pd.to_datetime("2025/03/17")
+LATEST_EVENT_END_DATE = pd.to_datetime("2025/12/19")
 
 
 class Event:
