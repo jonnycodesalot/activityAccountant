@@ -18,6 +18,14 @@ OLDEST_REGISTRANT_ALLOWED = dt.datetime(
 )
 # Overwritten by "now" in code if earlier than now.
 LATEST_EVENT_END_DATE = pd.to_datetime("2025/12/19")
+# By default, we'll allow leagues and sub passes to count if they end within a month of now,
+# even if LATEST_EVENT_END_DATE is earlier than that. We're generally computing the scores
+# because we're going to use them for a new league signup, which would start after the current
+# league is over and points have been earned. Also, the league probably has
+# been running a few months already, so unlike a volunteer event, we can reasonably say you
+# did achieve what you're getting the points for.
+# If you want to disallow this, set it to None.
+ALLOW_ONGOING_LEAGUES_THAT_END_WITHIN_THIS_TYPE = pd.DateOffset(days=30)
 
 
 class Event:
@@ -244,10 +252,29 @@ class Accountant:
                     )
                     continue
                 if eventEndDate > (latestAllowedEventEndDate):
-                    print(
-                        f"***Event {eventName} ends after the latest allowed event end date. It will not be counted."
-                    )
-                    continue
+                    # Before disqualifying the event, check if it's a league or
+                    # sub pass that ends within the allowed ongoing league window.
+                    allowThisOngoingEvent = False
+                    isLeagueOrSubPass = False
+                    if "category" in sheet and sheet["category"].iloc[ndx] == "Leagues":
+                        isLeagueOrSubPass = True
+                    evtNameLc = eventName.lower()
+                    if "sub pass" in evtNameLc or "sub pass" in evtNameLc:
+                        isLeagueOrSubPass = True
+                    if (
+                        ALLOW_ONGOING_LEAGUES_THAT_END_WITHIN_THIS_TYPE is not None
+                        and (isLeagueOrSubPass)
+                    ):
+                        if eventEndDate < (
+                            currTime + ALLOW_ONGOING_LEAGUES_THAT_END_WITHIN_THIS_TYPE
+                        ):
+                            # See comments at ALLOW_ONGOING_LEAGUES_THAT_END_WITHIN_THIS_TYPE definition
+                            allowThisOngoingEvent = True
+                    if not allowThisOngoingEvent:
+                        print(
+                            f"***Event {eventName} ends after the latest allowed event end date. It will not be counted."
+                        )
+                        continue
                 eventBeginDate = sheet["event_date"].iloc[ndx]
                 activityPoints = activityPoints
                 self.addUniqueEvent(
