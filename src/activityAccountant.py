@@ -13,6 +13,7 @@ EMAIL_ALIAS_FILE = "emailAliases.xlsx"
 # We don't count events whose dates are older than a
 # certain amount (based on the end date)
 MAXIMUM_EVENT_AGE = pd.DateOffset(years=3)
+# If you have no registrations after this date, you get no points
 OLDEST_REGISTRANT_ALLOWED = dt.datetime(
     year=2023, month=9, day=1, hour=9, minute=0, second=0
 )
@@ -26,6 +27,9 @@ LATEST_EVENT_END_DATE = pd.to_datetime("2025/12/19")
 # did achieve what you're getting the points for.
 # If you want to disallow this, set it to None.
 ALLOW_ONGOING_LEAGUES_THAT_END_WITHIN_THIS_TYPE = pd.DateOffset(days=30)
+
+# For local use only; set to true to only count events that are explicitly marked as volunteering in the category column
+COUNT_ONLY_VOLUNTEER_EVENTS = False
 
 
 class Event:
@@ -249,6 +253,15 @@ class Accountant:
                 if eventEndDate < (currTime - MAXIMUM_EVENT_AGE):
                     print(
                         f"***Event {eventName}'s end date is older than the maximum event age. It will not be counted."
+                    )
+                    continue
+                if (
+                    COUNT_ONLY_VOLUNTEER_EVENTS
+                    and "category" in sheet
+                    and "Volunteer" not in sheet["category"].iloc[ndx]
+                ):
+                    print(
+                        f"***Event {eventName} is not marked as volunteering. It will not be counted. See COUNT_ONLY_VOLUNTEER_EVENTS."
                     )
                     continue
                 if eventEndDate > (latestAllowedEventEndDate):
