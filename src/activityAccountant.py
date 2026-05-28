@@ -247,9 +247,16 @@ class Accountant:
                     continue
                 eventName = sheet["title"].iloc[ndx]
                 eventEndDate = sheet["event_end_date"].iloc[ndx]
+                eventBeginDate = sheet["event_date"].iloc[ndx]
                 if str(eventEndDate).startswith("0000"):
-                    eventEndDate = sheet["event_date"].iloc[ndx]
+                    eventEndDate = eventBeginDate
                 eventEndDate = pd.to_datetime(eventEndDate)
+                eventBeginDate = pd.to_datetime(eventBeginDate)
+                if eventBeginDate is None or eventBeginDate > currTime:
+                    print(
+                        f"***Event {eventName} has not yet begun. It will not be counted."
+                    )
+                    continue
                 if eventEndDate < (currTime - MAXIMUM_EVENT_AGE):
                     print(
                         f"***Event {eventName}'s end date is older than the maximum event age. It will not be counted."
