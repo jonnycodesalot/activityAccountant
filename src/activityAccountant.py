@@ -365,13 +365,23 @@ class Accountant:
 
     def assignPoints(self):
         # iterate over events, and assign points to every user that has that event
+        eventsToDelete = list()
         for eventId, event in self.eventMap.items():
+            eventHasAttendee = False
             eventId = int(eventId)
             for attendeeEmail, attendee in self.userMap.items():
                 if eventId in attendee.eventMultipliers:
                     attendee.points += (
                         event.activityPoints * attendee.eventMultipliers[eventId]
                     )
+                    eventHasAttendee = True
+            if not eventHasAttendee:
+                print(
+                    f"***Event {event.name} has no attendees. It will not be counted."
+                )
+                eventsToDelete.append(eventId)
+        for eventId in eventsToDelete:
+            self.eventMap.__delitem__(eventId)
 
     def exportResults(self, afterTimestampName, includeEmails=False):
         userIds = list()
@@ -410,7 +420,7 @@ class Accountant:
             if attendee[1].points <= 0:
                 # Don't include people with zero points or negative points in the output
                 print(
-                    f"Zeroing out negative score of {attendee[1].points} for user {attendee[1].email}."
+                    f"Zeroing out non-positive score of {attendee[1].points} for user {attendee[1].email}."
                 )
                 continue
             if lastScoreExamined is None:
