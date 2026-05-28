@@ -18,7 +18,7 @@ OLDEST_REGISTRANT_ALLOWED = dt.datetime(
     year=2023, month=9, day=1, hour=9, minute=0, second=0
 )
 # Overwritten by "now" in code if earlier than now.
-LATEST_EVENT_END_DATE = pd.to_datetime("2025/12/19")
+LATEST_EVENT_END_DATE = pd.to_datetime("2026/06/09")
 # By default, we'll allow leagues and sub passes to count if they end within a month of now,
 # even if LATEST_EVENT_END_DATE is earlier than that. We're generally computing the scores
 # because we're going to use them for a new league signup, which would start after the current
@@ -400,6 +400,12 @@ class Accountant:
         numberWithSameRank = 0
         lastScoreExamined = None
         for attendee in sortedUsers:
+            if attendee[1].points <= 0:
+                # Don't include people with zero points or negative points in the output
+                print(
+                    f"Zeroing out negative score of {attendee[1].points} for user {attendee[1].email}."
+                )
+                continue
             if lastScoreExamined is None:
                 lastScoreExamined = attendee[1].points
             userIds.append(attendee[1].id)
