@@ -1,8 +1,26 @@
 # activityAccountant
 
-ActivityAccountant tracks activity points earned by members of a club or volunteer organization. Scripts are written to ingest spreadsheets exported by Joomla or another CCM, and create an output spreadsheet that totals the activity points earned by registrant based on what events they attended.
+ActivityAccountant tracks activity points earned by members of a club or volunteer organization. Scripts are written to ingest spreadsheets exported by Joomla or another CCM, and create an output spreadsheet that totals the activity points earned by registrant based on what events they attended.s
 
-# Directory Structure
+
+# Source overview
+
+The bulk of the interesting code is in 3 files:
+* `activityAccountant.py` - Code to handle the collection of data from spreadsheets, tabulating to get results, and generating a spreadsheet with the results
+* `googleDriveClient.py` - handles connections to Google Drive access excel files. This leverages a GitHub secret to access the drive - see "Github Authentication" below.
+* `updateScoresOnDrive.py` - uses the above scripts to download files, create results, and upload them.
+* `recalculateActivityPoints.yml` - Implements a Github Job that can trigger execution. This is helpful for letting users that don't use a coding environment to run an update.
+
+## Modifiable variables
+
+There are several variables that can be used to modify behavior.  An enterprising coder could incorporate these as manual inputs to the Workflow so they are easily modifiable; for now you have to just edit them in the code.
+* `MAXIMUM_EVENT_AGE` - Events that end before the date resulting from this value will not be counted. As of this writing, it's 3 years.
+* `OLDEST_REGISTRANT_ALLOWED` - Registrations occurring before this date will be ignored.
+* `LATEST_EVENT_END_DATE` - The latest end date allowed. If this is set to a time before now, then it defaults to now. You would most likely use this to give credit for events/volunteer work that is currently in progress.  By default, events that haven't yet ended will not be counted.
+* `ALLOW_ONGOING_LEAGUES_THAT_END_WITHIN_THIS_TYPE` - A bit of an ovewrride to `LATEST_EVENT_END_DATE`, this explicitly counts events that are recognized as leagues or sub passes that have not yet ended, if they end within the prescribed time window.  This is 30 days by default.
+* `COUNT_ONLY_VOLUNTEER_EVENTS` - count only volunteer events.  Defaults to fault; useful for running metrics to give awards or what-have-you
+
+# Consumed Directory Structure
 
 The script assumes the following directory structure.
 
